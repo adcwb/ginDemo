@@ -1,0 +1,5 @@
+logs/gin-*
+apps/pays/keys/*
+CA/TLS/*
+config.json
+downloadFile/*
