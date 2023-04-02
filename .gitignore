@@ -3,3 +3,5 @@ apps/pays/keys/*
 CA/TLS/*
 config.json
 downloadFile/*
+.idea
+.idea/*

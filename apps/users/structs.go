@@ -1,9 +1,10 @@
 package users
 
+// testStruct 通用返回信息
 type testStruct struct {
-	Msg  string `json:"msg"`
-	Code int    `json:"code"`
-	Data string `json:"data"`
+	Msg  string `json:"msg"`  // 描述信息
+	Code int    `json:"code"` // 状态码
+	Data string `json:"data"` // 返回数据
 }
 
 type getTokenStruct struct {
@@ -177,9 +178,10 @@ type getUserPersonalPermissionStruct struct {
 	Msg  interface{} `json:"msg"`
 }
 
+// SendDataStruct 发送短信请求接口
 type SendDataStruct struct {
-	PhoneNumbers string `json:"phone_numbers"`
-	OpenID       string `json:"open_id"`
+	PhoneNumbers string `json:"phone_numbers"` // 接收验证码的手机号
+	OpenID       string `json:"open_id"`       // 微信客户端专用，OpenID
 }
 
 type WeChatOpenIDRequestStruct struct {

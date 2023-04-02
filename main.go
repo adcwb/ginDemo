@@ -19,6 +19,24 @@ import (
 	"time"
 )
 
+//	@title			ginDemo
+//	@version		1.0
+//	@description	此项目用于学习Golang的gin框架
+//	@termsOfService	http://swagger.io/terms/
+
+//	@contact.name	root
+//	@contact.email	root@adcwb.com
+//	@contact.url	http://www.swagger.io/support
+
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+
+//	@host		localhost:8000
+//	@BasePath	/
+
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						Authorization
 func main() {
 	// 加载多个APP的路由配置
 	apps.Include(

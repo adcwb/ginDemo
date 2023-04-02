@@ -123,6 +123,19 @@ func RedirectObj(c *gin.Context) {
 	// r.HandleContext(c) 路由重定向
 }
 
+// SendSmsCode 发送短信接口
+//
+//	@BasePath		/users/SendSmsCode
+//	@Summary		发送短信接口
+//	@Description	接收前端传递过来的手机号，并生成随机验证码发送给客户
+//	@Tags			Users
+//	@Accept			application/json
+//	@Produce		application/json
+//	@Param			Authorization	header	string			false	"Bearer 用户令牌"
+//	@Param			object			body	SendDataStruct	true	"查询参数"
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	testStruct "{"code":200,"data":"ok","msg":"ok"}"
+//	@Router			/SendSmsCode [post]
 func SendSmsCode(c *gin.Context) {
 	b, _ := c.GetRawData()
 	var SendData SendDataStruct

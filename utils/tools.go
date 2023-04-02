@@ -7,14 +7,15 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -257,11 +258,11 @@ func CheckNetWorkStatus() bool {
 	err2 := cmd2.Run()
 
 	// 检测服务端是否在线
-	url := "https://pays.tianchao.pro/api/test/ping"
+	urlTempData := "https://pays.tianchao.pro/api/test/ping"
 	method := "GET"
 
 	client := &http.Client{}
-	req, _ := http.NewRequest(method, url, nil)
+	req, _ := http.NewRequest(method, urlTempData, nil)
 	res, _ := client.Do(req)
 
 	defer func(Body io.ReadCloser) {
@@ -271,7 +272,7 @@ func CheckNetWorkStatus() bool {
 		}
 	}(res.Body)
 
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := io.ReadAll(res.Body)
 
 	if strings.ToLower(string(body)) == "Pang" {
 		temp3 = true
@@ -295,4 +296,20 @@ func CheckNetWorkStatus() bool {
 		zap.L().Debug("网络检测：CheckNetWorkStatus函数运行，网络检测通过.....")
 		return true
 	}
+}
+
+// SortMapToURLParams 将接收到的字典转化为URL查询字符串
+func SortMapToURLParams(m map[string]string) string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var params []string
+	for _, k := range keys {
+		v := url.QueryEscape(m[k])
+		params = append(params, k+"="+v)
+	}
+	return strings.Join(params, "&")
 }

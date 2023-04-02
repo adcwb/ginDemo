@@ -1,11 +1,16 @@
 package apps
 
 import (
+	_ "ginDemo/Docs"
 	"ginDemo/global"
 	"ginDemo/middleware"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	gs "github.com/swaggo/gin-swagger"
+	"go.uber.org/zap"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -20,15 +25,20 @@ func Include(opts ...Option) {
 
 // Init 初始化
 func Init(ENV string) *gin.Engine {
-	// 生产中启动，关闭DeBug模式
+	// 生产中启动，关闭DeBug模式, 关闭接口文档展示
 	if global.CONFIG.GetBool(ENV + ".DeBug") {
 		gin.SetMode(gin.ReleaseMode)
+		err := os.Setenv("NAME_OF_ENV_VARIABLE", "true")
+		if err != nil {
+			zap.L().Error("设定环境变量NAME_OF_ENV_VARIABLE出错，接口文档已暴露", zap.Error(err))
+		}
 	}
 
 	r := gin.Default()
 
 	// 启用性能分析工具
 	pprof.Register(r)
+
 	r.Use(
 		// 跨域配置
 		middleware.Cors(),
@@ -43,6 +53,8 @@ func Init(ENV string) *gin.Engine {
 	)
 
 	r.LoadHTMLGlob("templates/**/*")
+	//r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
+	r.GET("/swagger/*any", gs.DisablingWrapHandler(swaggerFiles.Handler, "NAME_OF_ENV_VARIABLE"))
 	r.Static("/assets", "./assets")
 	r.StaticFS("/logs", http.Dir("./logs"))
 	r.NoRoute(func(c *gin.Context) {

@@ -1,0 +1,69 @@
+basePath: /
+definitions:
+  users.SendDataStruct:
+    properties:
+      open_id:
+        type: string
+      phone_numbers:
+        type: string
+    type: object
+  users.testStruct:
+    properties:
+      code:
+        description: 状态码
+        type: integer
+      data:
+        description: 返回数据
+        type: string
+      msg:
+        description: 描述信息
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact:
+    email: adcwb@adcwb.com
+    name: adcwb
+    url: http://www.swagger.io/support
+  description: 此项目用于学习Golang的gin框架
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: ginDemo
+  version: "1.0"
+paths:
+  /SendSmsCode:
+    post:
+      consumes:
+      - application/json
+      description: 接收前端传递过来的手机号，并生成随机验证码发送给客户
+      parameters:
+      - description: Bearer 用户令牌
+        in: header
+        name: Authorization
+        type: string
+      - description: 查询参数
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/users.SendDataStruct'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":"ok","msg":"ok"}'
+          schema:
+            $ref: '#/definitions/users.testStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: 发送短信接口
+      tags:
+      - Users
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
