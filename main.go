@@ -7,6 +7,7 @@ import (
 	"ginDemo/apps/pays"
 	"ginDemo/apps/test"
 	"ginDemo/apps/users"
+	"ginDemo/apps/wechat"
 	"ginDemo/global"
 	"ginDemo/initialization"
 	"ginDemo/middleware"
@@ -45,6 +46,7 @@ func main() {
 		pays.Routers,
 		count.Routers,
 		test.Routers,
+		wechat.Routers,
 	)
 
 	// 初始化配置文件

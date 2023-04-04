@@ -84,3 +84,90 @@
 {"level":"INFO","time":"2023-04-02T16:58:07.230+0800","caller":"middleware/logs.go:69","msg":"/swagger/doc.json","status":200,"method":"GET","path":"/swagger/doc.json","query":"","ip":"::1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36","errors":"","cost":0}
 {"level":"DEBUG","time":"2023-04-02T16:58:07.232+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
 {"level":"INFO","time":"2023-04-02T16:58:07.233+0800","caller":"middleware/logs.go:69","msg":"/swagger/favicon-32x32.png","status":200,"method":"GET","path":"/swagger/favicon-32x32.png","query":"","ip":"::1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-02T16:59:42.138+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-02T16:59:42.138+0800","caller":"middleware/logs.go:69","msg":"/swagger/index.html","status":200,"method":"GET","path":"/swagger/index.html","query":"","ip":"::1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-02T16:59:42.160+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-02T16:59:42.160+0800","caller":"middleware/logs.go:69","msg":"/swagger/swagger-ui.css","status":304,"method":"GET","path":"/swagger/swagger-ui.css","query":"","ip":"::1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-02T16:59:42.160+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-02T16:59:42.160+0800","caller":"middleware/logs.go:69","msg":"/swagger/swagger-ui-bundle.js","status":304,"method":"GET","path":"/swagger/swagger-ui-bundle.js","query":"","ip":"::1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-02T16:59:42.162+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-02T16:59:42.162+0800","caller":"middleware/logs.go:69","msg":"/swagger/swagger-ui-standalone-preset.js","status":304,"method":"GET","path":"/swagger/swagger-ui-standalone-preset.js","query":"","ip":"::1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-02T16:59:42.307+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-02T16:59:42.308+0800","caller":"middleware/logs.go:69","msg":"/swagger/doc.json","status":200,"method":"GET","path":"/swagger/doc.json","query":"","ip":"::1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-02T16:59:42.312+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-02T16:59:42.312+0800","caller":"middleware/logs.go:69","msg":"/swagger/favicon-32x32.png","status":304,"method":"GET","path":"/swagger/favicon-32x32.png","query":"","ip":"::1","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36","errors":"","cost":0}
+{"level":"INFO","time":"2023-04-03T15:30:51.463+0800","caller":"initialization/init.go:37","msg":"配置文件发生变化！","ConfigName":"config.json"}
+{"level":"INFO","time":"2023-04-03T15:30:51.468+0800","caller":"initialization/init.go:37","msg":"配置文件发生变化！","ConfigName":"config.json"}
+{"level":"INFO","time":"2023-04-03T17:21:00.244+0800","caller":"initialization/init.go:91","msg":"MySQL组件初始化成功！"}
+{"level":"INFO","time":"2023-04-03T17:21:00.981+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-03T17:21:00.987+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-04-03T17:21:00.987+0800","caller":"initialization/init.go:123","msg":"RabbitMQ连接失败！","error":"AMQP scheme must be either 'amqp://' or 'amqps://'"}
+{"level":"DEBUG","time":"2023-04-03T17:21:49.337+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"ERROR","time":"2023-04-03T17:21:49.337+0800","caller":"wechat/views.go:24","msg":"RedisKey PhoneNumbers does not exist","error":"redis: nil"}
+{"level":"DEBUG","time":"2023-04-03T17:21:49.338+0800","caller":"utils/http.go:14","msg":"interface start","data":"2023-04-03 17:21:49"}
+{"level":"ERROR","time":"2023-04-03T17:21:49.338+0800","caller":"utils/http.go:38","msg":"HttpClient请求发送失败","error":"Get \"/cgi-bin/gettoken?corpidwwab4a127c8713c62b&corpsecret&corpsecret=mXRM_IjbVXE25wzbhzLxDB_IbmtlK4VYjvnIeZgF-y4\": unsupported protocol scheme \"\""}
+{"level":"ERROR","time":"2023-04-03T17:21:49.338+0800","caller":"wechat/views.go:40","msg":"HttpClient请求发送失败","error":"Get \"/cgi-bin/gettoken?corpidwwab4a127c8713c62b&corpsecret&corpsecret=mXRM_IjbVXE25wzbhzLxDB_IbmtlK4VYjvnIeZgF-y4\": unsupported protocol scheme \"\""}
+{"level":"ERROR","time":"2023-04-03T17:21:49.338+0800","caller":"wechat/views.go:45","msg":"WeChatGetAccessToken接口返回数据序列化失败！","error":"unexpected end of JSON input"}
+{"level":"INFO","time":"2023-04-03T17:21:49.338+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0.0010649}
+{"level":"DEBUG","time":"2023-04-03T17:22:00.731+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"DEBUG","time":"2023-04-03T17:22:00.733+0800","caller":"utils/http.go:14","msg":"interface start","data":"2023-04-03 17:22:00"}
+{"level":"ERROR","time":"2023-04-03T17:22:00.734+0800","caller":"utils/http.go:38","msg":"HttpClient请求发送失败","error":"Get \"/cgi-bin/gettoken?corpidwwab4a127c8713c62b&corpsecret&corpsecret=mXRM_IjbVXE25wzbhzLxDB_IbmtlK4VYjvnIeZgF-y4\": unsupported protocol scheme \"\""}
+{"level":"ERROR","time":"2023-04-03T17:22:00.734+0800","caller":"wechat/views.go:40","msg":"HttpClient请求发送失败","error":"Get \"/cgi-bin/gettoken?corpidwwab4a127c8713c62b&corpsecret&corpsecret=mXRM_IjbVXE25wzbhzLxDB_IbmtlK4VYjvnIeZgF-y4\": unsupported protocol scheme \"\""}
+{"level":"ERROR","time":"2023-04-03T17:22:00.734+0800","caller":"wechat/views.go:45","msg":"WeChatGetAccessToken接口返回数据序列化失败！","error":"unexpected end of JSON input"}
+{"level":"INFO","time":"2023-04-03T17:22:00.734+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0.0020832}
+{"level":"INFO","time":"2023-04-03T17:25:24.042+0800","caller":"initialization/init.go:91","msg":"MySQL组件初始化成功！"}
+{"level":"INFO","time":"2023-04-03T17:25:24.751+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-03T17:25:24.752+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-04-03T17:25:24.752+0800","caller":"initialization/init.go:123","msg":"RabbitMQ连接失败！","error":"AMQP scheme must be either 'amqp://' or 'amqps://'"}
+{"level":"DEBUG","time":"2023-04-03T17:25:27.382+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"DEBUG","time":"2023-04-03T17:25:27.382+0800","caller":"utils/http.go:14","msg":"interface start","data":"2023-04-03 17:25:27"}
+{"level":"ERROR","time":"2023-04-03T17:25:27.383+0800","caller":"utils/http.go:38","msg":"HttpClient请求发送失败","error":"Get \"/cgi-bin/gettoken?corpidwwab4a127c8713c62b&corpsecret&corpsecret=mXRM_IjbVXE25wzbhzLxDB_IbmtlK4VYjvnIeZgF-y4\": unsupported protocol scheme \"\""}
+{"level":"ERROR","time":"2023-04-03T17:25:27.383+0800","caller":"wechat/views.go:41","msg":"HttpClient请求发送失败","error":"Get \"/cgi-bin/gettoken?corpidwwab4a127c8713c62b&corpsecret&corpsecret=mXRM_IjbVXE25wzbhzLxDB_IbmtlK4VYjvnIeZgF-y4\": unsupported protocol scheme \"\""}
+{"level":"ERROR","time":"2023-04-03T17:25:27.383+0800","caller":"wechat/views.go:46","msg":"WeChatGetAccessToken接口返回数据序列化失败！","error":"unexpected end of JSON input"}
+{"level":"INFO","time":"2023-04-03T17:25:27.383+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0.0006467}
+{"level":"INFO","time":"2023-04-03T17:26:01.518+0800","caller":"initialization/init.go:91","msg":"MySQL组件初始化成功！"}
+{"level":"INFO","time":"2023-04-03T17:26:02.221+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-03T17:26:02.222+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-04-03T17:26:02.222+0800","caller":"initialization/init.go:123","msg":"RabbitMQ连接失败！","error":"AMQP scheme must be either 'amqp://' or 'amqps://'"}
+{"level":"DEBUG","time":"2023-04-03T17:26:04.030+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"DEBUG","time":"2023-04-03T17:26:04.030+0800","caller":"utils/http.go:14","msg":"interface start","data":"2023-04-03 17:26:04"}
+{"level":"DEBUG","time":"2023-04-03T17:26:04.173+0800","caller":"utils/http.go:64","msg":"interface return","data: ":"2023-04-03 17:26:04"}
+{"level":"INFO","time":"2023-04-03T17:26:04.173+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0.1430343}
+{"level":"INFO","time":"2023-04-03T17:27:59.724+0800","caller":"initialization/init.go:91","msg":"MySQL组件初始化成功！"}
+{"level":"INFO","time":"2023-04-03T17:28:00.411+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-03T17:28:00.411+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-04-03T17:28:00.411+0800","caller":"initialization/init.go:123","msg":"RabbitMQ连接失败！","error":"AMQP scheme must be either 'amqp://' or 'amqps://'"}
+{"level":"DEBUG","time":"2023-04-03T17:28:05.548+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"DEBUG","time":"2023-04-03T17:28:05.548+0800","caller":"utils/http.go:14","msg":"interface start","data":"2023-04-03 17:28:05"}
+{"level":"DEBUG","time":"2023-04-03T17:28:05.614+0800","caller":"utils/http.go:64","msg":"interface return","data: ":"2023-04-03 17:28:05"}
+{"level":"INFO","time":"2023-04-03T17:28:05.614+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0.0661031}
+{"level":"INFO","time":"2023-04-03T17:28:34.337+0800","caller":"initialization/init.go:91","msg":"MySQL组件初始化成功！"}
+{"level":"INFO","time":"2023-04-03T17:28:35.016+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-03T17:28:35.016+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-04-03T17:28:35.016+0800","caller":"initialization/init.go:123","msg":"RabbitMQ连接失败！","error":"AMQP scheme must be either 'amqp://' or 'amqps://'"}
+{"level":"DEBUG","time":"2023-04-03T17:28:37.270+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"DEBUG","time":"2023-04-03T17:28:37.270+0800","caller":"utils/http.go:14","msg":"interface start","data":"2023-04-03 17:28:37"}
+{"level":"DEBUG","time":"2023-04-03T17:28:37.483+0800","caller":"utils/http.go:64","msg":"interface return","data: ":"2023-04-03 17:28:37"}
+{"level":"INFO","time":"2023-04-03T17:28:37.484+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0.21399}
+{"level":"DEBUG","time":"2023-04-03T17:28:41.444+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"DEBUG","time":"2023-04-03T17:28:41.446+0800","caller":"utils/http.go:14","msg":"interface start","data":"2023-04-03 17:28:41"}
+{"level":"DEBUG","time":"2023-04-03T17:28:41.538+0800","caller":"utils/http.go:64","msg":"interface return","data: ":"2023-04-03 17:28:41"}
+{"level":"INFO","time":"2023-04-03T17:28:41.538+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0.0929921}
+{"level":"INFO","time":"2023-04-03T17:39:28.298+0800","caller":"initialization/init.go:91","msg":"MySQL组件初始化成功！"}
+{"level":"INFO","time":"2023-04-03T17:39:29.046+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-03T17:39:29.047+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-04-03T17:39:29.047+0800","caller":"initialization/init.go:123","msg":"RabbitMQ连接失败！","error":"AMQP scheme must be either 'amqp://' or 'amqps://'"}
+{"level":"DEBUG","time":"2023-04-03T17:57:09.385+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-03T17:57:09.388+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0.0015505}
+{"level":"DEBUG","time":"2023-04-03T17:57:12.680+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-03T17:57:12.680+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-03T17:57:13.260+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-03T17:57:13.260+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-03T17:57:15.405+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-03T17:57:15.406+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-03T17:57:16.872+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-03T17:57:16.872+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-03T17:57:17.337+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-03T17:57:17.338+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0}
+{"level":"DEBUG","time":"2023-04-03T17:57:17.743+0800","caller":"middleware/jwt.go:35","msg":"当前登录用户的Token为：","Token: ":""}
+{"level":"INFO","time":"2023-04-03T17:57:17.743+0800","caller":"middleware/logs.go:69","msg":"/chat/GetAccessToken","status":200,"method":"GET","path":"/chat/GetAccessToken","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.31.3","errors":"","cost":0}
