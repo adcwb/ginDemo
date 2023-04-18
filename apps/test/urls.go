@@ -11,5 +11,8 @@ func Routers(e *gin.Engine) {
 		test.GET("/test", RabbitTest)
 		test.GET("/gocron", JobTest)
 		test.GET("/stop", JobStop)
+		test.GET("/operator", Operator)
+		test.GET("/ThreeCodeMutualCheck", ThreeCodeMutualCheck)
+
 	}
 }

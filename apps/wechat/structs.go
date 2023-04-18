@@ -1,10 +1,19 @@
 package wechat
 
+// GetAccessTokenReturnStruct 企业微信AccessToken
 type GetAccessTokenReturnStruct struct {
 	ErrCode     int    `json:"errcode"`
 	ErrMsg      string `json:"errmsg"`
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int    `json:"expires_in"`
+}
+
+// GetTicketReturnStruct 获取企业的jsapi_ticket
+type GetTicketReturnStruct struct {
+	ErrCode   int    `json:"errcode"`
+	ErrMsg    string `json:"errmsg"`
+	Ticket    string `json:"ticket"`
+	ExpiresIn int    `json:"expires_in"`
 }
 
 type MsgContent struct {

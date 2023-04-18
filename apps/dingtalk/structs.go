@@ -67,3 +67,19 @@ type GetFromProcessCodeStruct struct {
 		Status       string `json:"status"`
 	} `json:"result"`
 }
+
+// T 批量查询成员排班概要信息
+type T struct {
+	Errcode int `json:"errcode"`
+	Result  []struct {
+		CorpId        string   `json:"corp_id"`
+		GroupId       int      `json:"group_id"`
+		ShiftIds      []int    `json:"shift_ids"`
+		ShiftNames    []string `json:"shift_names"`
+		ShiftVersions []int    `json:"shift_versions"`
+		Userid        string   `json:"userid"`
+		WorkDate      string   `json:"work_date"`
+	} `json:"result"`
+	Success   bool   `json:"success"`
+	RequestId string `json:"request_id"`
+}

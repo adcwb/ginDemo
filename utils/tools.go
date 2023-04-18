@@ -2,6 +2,8 @@ package utils
 
 import (
 	"crypto/md5"
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"github.com/gofrs/uuid"
 	"go.uber.org/zap"
@@ -104,6 +106,18 @@ func MD5(str string) string {
 	has := md5.Sum(data)
 	md5str := fmt.Sprintf("%x", has) //将[]byte转成16进制
 	return md5str
+}
+
+func ToHexStr(str string) string {
+	var newStr string
+	for _, r := range str {
+		hexStr := strconv.FormatInt(int64(r&0xFF), 16)
+		if len(hexStr) == 1 {
+			hexStr = "0" + hexStr
+		}
+		newStr += hexStr
+	}
+	return newStr
 }
 
 // GetRandomString 获取一个随机字符串
@@ -312,4 +326,39 @@ func SortMapToURLParams(m map[string]string) string {
 		params = append(params, k+"="+v)
 	}
 	return strings.Join(params, "&")
+}
+
+// Contains 判断A字符串是否包含B字符串
+func Contains(a, b string) bool {
+	return strings.Contains(a, b)
+}
+
+type Result struct {
+	ActiveTime         string `xml:"activeTime"`
+	ProdStatusName     string `xml:"prodStatusName"`
+	ProdMainStatusName string `xml:"prodMainStatusName"`
+	CertNumber         string `xml:"certNumber"`
+	Number             string `xml:"number"`
+}
+
+type SvcCont struct {
+	Result        Result `xml:"RESULT"`
+	ResultCode    int    `xml:"resultCode"`
+	ResultMsg     string `xml:"resultMsg"`
+	TransactionID string `xml:"GROUP_TRANSACTIONID"`
+}
+
+// XmlToJson xml数据转化为json
+func XmlToJson(xmlStr string) (string, error) {
+	var svcCont SvcCont
+	err := xml.Unmarshal([]byte(xmlStr), &svcCont)
+	if err != nil {
+		return "", err
+	}
+	jsonBytes, err := json.Marshal(svcCont)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
 }

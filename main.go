@@ -11,13 +11,11 @@ import (
 	"ginDemo/global"
 	"ginDemo/initialization"
 	"ginDemo/middleware"
-	"github.com/go-co-op/gocron"
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
-	"time"
 )
 
 //	@title			ginDemo
@@ -59,19 +57,19 @@ func main() {
 	if err := middleware.InitLogger(); err != nil {
 		zap.L().Error("日志模块加载失败！")
 	}
-
+	var err error
 	// 初始化数据库
-	global.DB, _ = initialization.InitMySqlClient(global.CONFIG.GetString("RunConfig"))
+	//global.DB, _ = initialization.InitMySqlClient(global.CONFIG.GetString("RunConfig"))
 
 	// 数据迁移
-	err := global.DB.AutoMigrate(
-		&users.User{},
-		&pays.PayConfigData{},
-		&pays.PayData{},
-	)
-	if err != nil {
-		zap.L().Error("数据库自动迁移失败！", zap.Error(err))
-	}
+	//err := global.DB.AutoMigrate(
+	//	&users.User{},
+	//	&pays.PayConfigData{},
+	//	&pays.PayData{},
+	//)
+	//if err != nil {
+	//	zap.L().Error("数据库自动迁移失败！", zap.Error(err))
+	//}
 	// 初始化MongoDB数据库
 	initialization.InitMongoDBClient(global.CONFIG.GetString("RunConfig"))
 
@@ -79,16 +77,16 @@ func main() {
 	initialization.InitRedisClient(global.CONFIG.GetString("RunConfig"))
 
 	// 初始化InfluxDB数据库
-	initialization.InitInfluxDB(global.CONFIG.GetString("RunConfig"))
+	//initialization.InitInfluxDB(global.CONFIG.GetString("RunConfig"))
 
 	// 初始化RabbitMQ消息队列
-	initialization.InitRabbitMQ(global.CONFIG.GetString("RunConfig"))
+	//initialization.InitRabbitMQ(global.CONFIG.GetString("RunConfig"))
 
 	// 初始化定时任务
-	global.JobS = gocron.NewScheduler(time.UTC)
+	//global.JobS = gocron.NewScheduler(time.UTC)
 
 	// 运行调度任务，共有两种方式
-	global.JobS.StartAsync() // 异步启动调度器
+	//global.JobS.StartAsync() // 异步启动调度器
 	//global.JobS.StartBlocking() // 启动调度器并阻塞当前执行路径
 
 	// 初始化路由

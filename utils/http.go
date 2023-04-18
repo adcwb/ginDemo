@@ -2,12 +2,19 @@ package utils
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 )
+
+type TokenStruct struct {
+	Sign      string `json:"Sign"`
+	Timestamp string `json:"Timestamp"`
+	AppKey    string `json:"AppKey"`
+}
 
 // HttpClient http请求客户端封装
 func HttpClient(urls, method, data string, Token string) (body []byte, err error) {
@@ -20,7 +27,17 @@ func HttpClient(urls, method, data string, Token string) (body []byte, err error
 		return body, err
 	}
 
-	if len(Token) > 1 && Token != "xml" {
+	if Contains(Token, "AppKey") && Contains(Token, "Sign") {
+		var tempData TokenStruct
+		err = json.Unmarshal([]byte(Token), &tempData)
+		if err != nil {
+			zap.L().Error("Json序列化失败", zap.Error(err))
+		}
+		req.Header.Add("Sign", tempData.Sign)
+		req.Header.Add("Timestamp", tempData.Timestamp)
+		req.Header.Add("AppKey", tempData.AppKey)
+
+	} else if len(Token) > 1 && Token != "xml" {
 		StrBytes := []byte(Token)
 		TokenEncoded := base64.StdEncoding.EncodeToString(StrBytes)
 		req.Header.Add("X-Token", TokenEncoded)

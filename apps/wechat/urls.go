@@ -9,7 +9,8 @@ func Routers(e *gin.Engine) {
 	{
 		// GET请求
 		chat.GET("/GetAccessToken", GetWeChatAccessToken)
+		chat.GET("/GetJsAPITicket", GetWorkJsAPITicketToken)
+		chat.GET("/GetAgentTicket", GetAgentTicketToken)
 		chat.Any("/Callback", CallbackWechat)
-
 	}
 }

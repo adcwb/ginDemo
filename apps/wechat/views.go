@@ -65,6 +65,54 @@ func GetWeChatAccessToken(c *gin.Context) {
 	}
 }
 
+// GetWorkJsAPITicketToken 获取企业的jsapi_ticket
+func GetWorkJsAPITicketToken(c *gin.Context) {
+	token := utils.GetWorkJsAPITicket()
+	if token != "" {
+		returnData := map[string]interface{}{
+			"jsapi_token": token,
+			"errcode":     0,
+			"errmsg":      "ok",
+			"expires_in":  1800,
+		}
+		c.JSON(http.StatusOK, returnData)
+		return
+	} else {
+		returnData := map[string]interface{}{
+			"jsapi_token": "",
+			"errcode":     0,
+			"errmsg":      "ok",
+			"expires_in":  1800,
+		}
+		c.JSON(http.StatusOK, returnData)
+		return
+	}
+}
+
+// GetAgentTicketToken 获取应用的jsapi_ticket
+func GetAgentTicketToken(c *gin.Context) {
+	token := utils.GetJsAPITicket()
+	if token != "" {
+		returnData := map[string]interface{}{
+			"jsapi_token": token,
+			"errcode":     0,
+			"errmsg":      "ok",
+			"expires_in":  1800,
+		}
+		c.JSON(http.StatusOK, returnData)
+		return
+	} else {
+		returnData := map[string]interface{}{
+			"jsapi_token": "",
+			"errcode":     0,
+			"errmsg":      "ok",
+			"expires_in":  1800,
+		}
+		c.JSON(http.StatusOK, returnData)
+		return
+	}
+}
+
 // CallbackWechat 回调地址
 func CallbackWechat(c *gin.Context) {
 	method := c.Request.Method
