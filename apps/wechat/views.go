@@ -113,6 +113,46 @@ func GetAgentTicketToken(c *gin.Context) {
 	}
 }
 
+// GetWorkConfig 获取企业微信config
+func GetWorkConfig(c *gin.Context) {
+	url := c.DefaultQuery("url", "http://mp.weixin.qq.com?params=value")
+	noncestr := "Wm3WZYTPz0wzccnW"
+	jsapi_ticket := utils.GetWorkJsAPITicket()
+	timestamp := time.Now().Unix()
+
+	sign := utils.GenerateSignature(noncestr, jsapi_ticket, timestamp, url)
+	returnData := map[string]interface{}{
+		"noncestr":     noncestr,
+		"jsapi_ticket": jsapi_ticket,
+		"timestamp":    timestamp,
+		"url":          url,
+		"sign":         sign,
+	}
+
+	c.JSON(http.StatusOK, returnData)
+}
+
+// GetWorkAgentConfig 获取企业微信agent_config
+func GetWorkAgentConfig(c *gin.Context) {
+	url := c.DefaultQuery("url", "http://mp.weixin.qq.com?params=value")
+	nonceStr := "Wm3WZYTPz0wzccnW"
+	jsapiTicket := utils.GetJsAPITicket()
+	timestamp := time.Now().Unix()
+	corpId := "wwab4a127c8713c62b" // 必填，企业微信的corpid，必须与当前登录的企业一致
+	agentId := "1000008"           // 必填，企业微信的应用id （e.g. 1000247）
+	sign := utils.GenerateSignature(nonceStr, jsapiTicket, timestamp, url)
+	returnData := map[string]interface{}{
+		"corpid":       corpId,
+		"agentId":      agentId,
+		"noncestr":     nonceStr,
+		"jsapi_ticket": jsapiTicket,
+		"timestamp":    timestamp,
+		"sign":         sign,
+	}
+
+	c.JSON(http.StatusOK, returnData)
+}
+
 // CallbackWechat 回调地址
 func CallbackWechat(c *gin.Context) {
 	method := c.Request.Method

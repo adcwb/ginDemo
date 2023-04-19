@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"ginDemo/global"
@@ -92,16 +93,20 @@ func GetWechatAgentToken() (result string) {
 	}
 	// 若有缓存直接返回
 	if len(result) > 5 && result != "" {
+		fmt.Println("GetWechatAgentToken接口有缓存，直接返回数据：" + result)
 		return result
 	} else {
 		CorpID := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpID")
 		CorpSecret := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatAgentCorpSecret")
-
+		fmt.Println("GetWechatAgentToken接口无缓存，CorpID：" + CorpID)
+		fmt.Println("GetWechatAgentToken接口无缓存，CorpSecret：" + CorpSecret)
+		fmt.Println("GetWechatAgentToken接口无缓存，URLS：" + global.CONFIG.GetString(global.CONFIG.GetString("RunConfig")+".WorkWechatUrl") + "/cgi-bin/gettoken?corpid=" + CorpID + "&corpsecret=" + CorpSecret)
 		data, err := HttpClient(global.CONFIG.GetString(global.CONFIG.GetString("RunConfig")+".WorkWechatUrl")+"/cgi-bin/gettoken?corpid="+CorpID+"&corpsecret="+CorpSecret, "GET", "", "")
 		if err != nil {
 			zap.L().Error("HttpClient请求发送失败", zap.Error(err))
 		}
 		var ReturnData GetAccessTokenReturnStruct
+		fmt.Println("GetWechatAgentToken接口无缓存，ReturnData：" + string(data))
 		err = json.Unmarshal(data, &ReturnData)
 		if err != nil {
 			zap.L().Error("WeChatGetAccessToken接口返回数据序列化失败！", zap.Error(err))
@@ -109,7 +114,7 @@ func GetWechatAgentToken() (result string) {
 		if ReturnData.ErrCode == 0 {
 			// 将数据记录到Redis数据库一份
 			seconds := 7150
-			err = global.REDIS.Set(ctx, "WeChatAccessToken", ReturnData.AccessToken, time.Duration(seconds)*time.Second).Err()
+			err = global.REDIS.Set(ctx, "WeChatAgentAccessToken", ReturnData.AccessToken, time.Duration(seconds)*time.Second).Err()
 
 			if err != nil {
 				zap.L().Error("Redis Set Key Error", zap.String("keys", "WeChatAgentAccessToken"), zap.String("value", ReturnData.AccessToken), zap.Error(err))
@@ -185,6 +190,7 @@ func GetJsAPITicket() (Ticket string) {
 	if err != nil {
 		zap.L().Error("HttpClient请求发送失败", zap.Error(err))
 	}
+	fmt.Println(string(data))
 	var ReturnData GetTicketReturnStruct
 	err = json.Unmarshal(data, &ReturnData)
 	if err != nil {
@@ -201,4 +207,13 @@ func GetJsAPITicket() (Ticket string) {
 		}
 	}
 	return ReturnData.Ticket
+}
+
+// GenerateSignature  企业微信JS-SDK使用权限签名算法
+func GenerateSignature(noncestr string, jsapiTicket string, timestamp int64, url string) string {
+	string1 := fmt.Sprintf("jsapi_ticket=%s&noncestr=%s&timestamp=%d&url=%s", jsapiTicket, noncestr, timestamp, url)
+	h := sha1.New()
+	h.Write([]byte(string1))
+	signature := fmt.Sprintf("%x", h.Sum(nil))
+	return signature
 }

@@ -763,3 +763,26 @@
 {"level":"INFO","time":"2023-04-18T16:27:03.136+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
 {"level":"INFO","time":"2023-04-18T16:27:03.148+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
 {"level":"ERROR","time":"2023-04-18T16:27:03.155+0800","caller":"ginDemo/main.go:106","msg":"项目启动失败！","error":"listen tcp 0.0.0.0:8000: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted."}
+{"level":"INFO","time":"2023-04-18T18:47:17.438+0800","caller":"initialization/init.go:37","msg":"配置文件发生变化！","ConfigName":"config.json"}
+{"level":"ERROR","time":"2023-04-19T14:12:51.039+0800","caller":"ginDemo/main.go:117","msg":"项目停止运行了......"}
+{"level":"INFO","time":"2023-04-19T14:12:58.629+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-19T14:12:58.648+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-04-19T14:12:58.655+0800","caller":"ginDemo/main.go:106","msg":"项目启动失败！","error":"listen tcp 0.0.0.0:8000: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted."}
+{"level":"ERROR","time":"2023-04-19T14:14:02.868+0800","caller":"ginDemo/main.go:117","msg":"项目停止运行了......"}
+{"level":"INFO","time":"2023-04-19T14:14:06.271+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-19T14:14:06.289+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-04-19T14:14:06.294+0800","caller":"ginDemo/main.go:106","msg":"项目启动失败！","error":"listen tcp 0.0.0.0:8000: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted."}
+{"level":"ERROR","time":"2023-04-19T14:14:17.165+0800","caller":"ginDemo/main.go:117","msg":"项目停止运行了......"}
+{"level":"INFO","time":"2023-04-19T14:14:20.405+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-19T14:14:20.424+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-04-19T14:14:42.567+0800","caller":"utils/workWechat.go:47","msg":"RedisKey PhoneNumbers does not exist","error":"redis: nil"}
+{"level":"DEBUG","time":"2023-04-19T14:14:42.567+0800","caller":"utils/http.go:23","msg":"interface start","data":"2023-04-19 14:14:42"}
+{"level":"DEBUG","time":"2023-04-19T14:14:47.437+0800","caller":"utils/http.go:83","msg":"interface return","data: ":"2023-04-19 14:14:47"}
+{"level":"ERROR","time":"2023-04-19T14:14:47.437+0800","caller":"utils/workWechat.go:131","msg":"RedisKey WeChatWorkJsAPITicketToken does not exist","error":"redis: nil"}
+{"level":"DEBUG","time":"2023-04-19T14:14:47.437+0800","caller":"utils/http.go:23","msg":"interface start","data":"2023-04-19 14:14:47"}
+{"level":"DEBUG","time":"2023-04-19T14:14:47.645+0800","caller":"utils/http.go:83","msg":"interface return","data: ":"2023-04-19 14:14:47"}
+{"level":"INFO","time":"2023-04-19T14:14:47.645+0800","caller":"middleware/logs.go:69","msg":"/chat/GetWorkConfig","status":200,"method":"GET","path":"/chat/GetWorkConfig","query":"url=http://192.168.1.1/cag","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.32.2","errors":"","cost":5.0781665}
+{"level":"INFO","time":"2023-04-19T14:36:40.998+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-19T14:36:41.020+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"INFO","time":"2023-04-19T14:48:39.148+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-04-19T14:48:39.160+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}

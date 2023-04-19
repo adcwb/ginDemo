@@ -4,14 +4,10 @@ import (
 	_ "ginDemo/Docs"
 	"ginDemo/global"
 	"ginDemo/middleware"
-	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	gs "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
-	"time"
 )
 
 type Option func(*gin.Engine)
@@ -37,15 +33,15 @@ func Init(ENV string) *gin.Engine {
 	r := gin.Default()
 
 	// 启用性能分析工具
-	pprof.Register(r)
+	//pprof.Register(r)
 
 	r.Use(
 		// 跨域配置
 		middleware.Cors(),
-		middleware.JwtCheck(),
+		//middleware.JwtCheck(),
 
 		// 限速中间件，初始token100，每秒增加100
-		middleware.RateLimitMiddleware(time.Second, 100, 10),
+		//middleware.RateLimitMiddleware(time.Second, 100, 10),
 
 		// 日志中间件
 		middleware.GinLogger(),
@@ -54,7 +50,7 @@ func Init(ENV string) *gin.Engine {
 
 	r.LoadHTMLGlob("templates/**/*")
 	//r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
-	r.GET("/swagger/*any", gs.DisablingWrapHandler(swaggerFiles.Handler, "NAME_OF_ENV_VARIABLE"))
+	//r.GET("/swagger/*any", gs.DisablingWrapHandler(swaggerFiles.Handler, "NAME_OF_ENV_VARIABLE"))
 	r.Static("/assets", "./assets")
 	r.StaticFS("/logs", http.Dir("./logs"))
 	r.NoRoute(func(c *gin.Context) {
