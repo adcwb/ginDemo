@@ -127,7 +127,7 @@ func GetWechatAgentToken() (result string) {
 
 // GetWorkJsAPITicket 获取企业的jsapi_ticket
 func GetWorkJsAPITicket() (JsAPITicket string) {
-	token := GetWechatToken()
+	token := GetWechatAgentToken()
 	ctx := context.Background()
 	result, err := global.REDIS.Get(ctx, "WeChatWorkJsAPITicketToken").Result()
 
@@ -160,7 +160,7 @@ func GetWorkJsAPITicket() (JsAPITicket string) {
 		err = global.REDIS.Set(ctx, "WeChatWorkJsAPITicketToken", ReturnData.Ticket, time.Duration(seconds)*time.Second).Err()
 
 		if err != nil {
-			zap.L().Error("Redis Set Key Error", zap.String("keys", "WeChatTicketToken"), zap.String("value", ReturnData.Ticket), zap.Error(err))
+			zap.L().Error("Redis Set Key Error", zap.String("keys", "WeChatWorkJsAPITicketToken"), zap.String("value", ReturnData.Ticket), zap.Error(err))
 		}
 	}
 	return ReturnData.Ticket
@@ -182,15 +182,12 @@ func GetJsAPITicket() (Ticket string) {
 
 	// 若有缓存直接返回
 	if len(result) > 5 && result != "" {
-		fmt.Println("aaaa")
 		return result
 	}
-	fmt.Println(global.CONFIG.GetString(global.CONFIG.GetString("RunConfig")+".WorkWechatUrl") + "/cgi-bin/ticket/get?access_token=" + token + "&type=agent_config")
 	data, err := HttpClient(global.CONFIG.GetString(global.CONFIG.GetString("RunConfig")+".WorkWechatUrl")+"/cgi-bin/ticket/get?access_token="+token+"&type=agent_config", "GET", "", "")
 	if err != nil {
 		zap.L().Error("HttpClient请求发送失败", zap.Error(err))
 	}
-	fmt.Println(string(data))
 	var ReturnData GetTicketReturnStruct
 	err = json.Unmarshal(data, &ReturnData)
 	if err != nil {
@@ -203,7 +200,7 @@ func GetJsAPITicket() (Ticket string) {
 		err = global.REDIS.Set(ctx, "WeChatTicketToken", ReturnData.Ticket, time.Duration(seconds)*time.Second).Err()
 
 		if err != nil {
-			zap.L().Error("Redis Set Key Error", zap.String("keys", "WeChatTicketToken"), zap.String("value", ReturnData.Ticket), zap.Error(err))
+			zap.L().Error("Redis Set Key WeChatTicketToken Error", zap.String("keys", "WeChatTicketToken"), zap.String("value", ReturnData.Ticket), zap.Error(err))
 		}
 	}
 	return ReturnData.Ticket

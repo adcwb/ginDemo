@@ -115,7 +115,7 @@ func GetAgentTicketToken(c *gin.Context) {
 
 // GetWorkConfig 获取企业微信config
 func GetWorkConfig(c *gin.Context) {
-	url := c.DefaultQuery("url", "http://mp.weixin.qq.com?params=value")
+	url := c.DefaultQuery("url", "https://qyapi.ud0.com.cn")
 	noncestr := "Wm3WZYTPz0wzccnW"
 	jsapi_ticket := utils.GetWorkJsAPITicket()
 	timestamp := time.Now().Unix()
@@ -123,6 +123,7 @@ func GetWorkConfig(c *gin.Context) {
 	sign := utils.GenerateSignature(noncestr, jsapi_ticket, timestamp, url)
 	returnData := map[string]interface{}{
 		"noncestr":     noncestr,
+		"corpId":       "wwab4a127c8713c62b",
 		"jsapi_ticket": jsapi_ticket,
 		"timestamp":    timestamp,
 		"url":          url,
@@ -134,7 +135,7 @@ func GetWorkConfig(c *gin.Context) {
 
 // GetWorkAgentConfig 获取企业微信agent_config
 func GetWorkAgentConfig(c *gin.Context) {
-	url := c.DefaultQuery("url", "http://mp.weixin.qq.com?params=value")
+	url := c.DefaultQuery("url", "https://qyapi.ud0.com.cn")
 	nonceStr := "Wm3WZYTPz0wzccnW"
 	jsapiTicket := utils.GetJsAPITicket()
 	timestamp := time.Now().Unix()
