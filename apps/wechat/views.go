@@ -8,6 +8,7 @@ import (
 	"ginDemo/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -152,6 +153,162 @@ func GetWorkAgentConfig(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, returnData)
+}
+
+// GetWorkUserData 获取用户信息
+func GetWorkUserData(c *gin.Context) {
+	userID := c.DefaultQuery("userid", "")
+	if userID == "" {
+		returnData := map[string]interface{}{
+			"code": 201,
+			"msg":  "查询失败，userid为空",
+		}
+		c.JSON(http.StatusOK, returnData)
+		return
+	}
+
+	token := utils.GetWechatToken()
+	tempData := make([]string, 0, 4)
+	tempData = append(tempData, userID)
+	requestData := map[string]interface{}{
+		"external_userid_list":       tempData,
+		"need_enter_session_context": 1,
+	}
+	marshal, err := json.Marshal(requestData)
+	if err != nil {
+		zap.L().Error("Json序列化失败", zap.Error(err))
+	}
+
+	data, err := utils.HttpClient(global.CONFIG.GetString(global.CONFIG.GetString("RunConfig")+".WorkWechatUrl")+"/cgi-bin/kf/customer/batchget?access_token="+token, "POST", string(marshal), "")
+	if err != nil {
+		zap.L().Error("HttpClient请求发送失败", zap.Error(err))
+	}
+	var ReturnData GetWorkUserDataStruct
+	err = json.Unmarshal(data, &ReturnData)
+	if err != nil {
+		zap.L().Error("GetWorkUserData接口返回数据序列化失败！", zap.Error(err))
+	}
+	// 将查询到的数据保存到MongoDB中一份，库名workWechat，表名userdata
+
+	collection := global.MONGO.Database("workWechat").Collection("userdata")
+	// 判断文档是否存在，存在则更新，不存在则新增
+	var result MongoDBUserDataStruct
+	filter := bson.M{"userid": userID}
+	err = collection.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		zap.L().Error("查询数据失败", zap.Error(err))
+	}
+	if result.Status == "ok" {
+		// 更新的内容
+		update := bson.M{
+			"$set": bson.M{
+				"status":                ReturnData.ErrMsg,
+				"userid":                ReturnData.CustomerList[0].ExternalUserid,
+				"nickname":              ReturnData.CustomerList[0].Nickname,
+				"avatar":                ReturnData.CustomerList[0].Avatar,
+				"gender":                ReturnData.CustomerList[0].Gender,
+				"unionid":               ReturnData.CustomerList[0].Unionid,
+				"enter_session_context": ReturnData.CustomerList[0].EnterSessionContext,
+			},
+		}
+
+		updateResult, err := collection.UpdateOne(context.TODO(), filter, update)
+		if err != nil {
+			zap.L().Error("更新数据失败", zap.Error(err))
+		}
+
+		zap.L().Info("更新数据成功", zap.Any("Matched documents and updated  documents", updateResult.ModifiedCount))
+
+		err = collection.FindOne(context.TODO(), filter).Decode(&result)
+		returnData := map[string]interface{}{
+			"code": 200,
+			"msg":  "查询成功",
+			"data": result,
+		}
+		c.JSON(http.StatusOK, returnData)
+		return
+	} else {
+		s1 := MongoDBUserDataStruct{
+			ReturnData.ErrMsg,
+			userID,
+			ReturnData.CustomerList[0].Nickname,
+			ReturnData.CustomerList[0].Avatar,
+			ReturnData.CustomerList[0].Gender,
+			ReturnData.CustomerList[0].Unionid,
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			ReturnData.CustomerList[0].EnterSessionContext,
+		}
+		insertResult, err := collection.InsertOne(context.TODO(), s1)
+		if err != nil {
+			zap.L().Error("插入数据失败", zap.Error(err))
+		}
+		zap.L().Info("插入数据成功", zap.Any("data", insertResult.InsertedID))
+		err = collection.FindOne(context.TODO(), filter).Decode(&result)
+		returnData := map[string]interface{}{
+			"code": 200,
+			"msg":  "查询成功",
+			"data": result,
+		}
+
+		c.JSON(http.StatusOK, returnData)
+		return
+	}
+}
+
+// SaveWorkUserData 保存用户信息
+func SaveWorkUserData(c *gin.Context) {
+	b, _ := c.GetRawData()
+	var tempData UserDataStruct
+	err := json.Unmarshal(b, &tempData)
+	if err != nil {
+		zap.L().Error("Json序列化UserDataStruct失败", zap.Error(err))
+	}
+
+	// 将接收到的数据保存到MongoDB中，库名workWechat，表名userdata
+	collection := global.MONGO.Database("workWechat").Collection("userdata")
+	// 更新的条件
+	filter := bson.M{"userid": tempData.UserID}
+
+	// 更新的内容
+	update := bson.M{
+		"$set": bson.M{
+			"username":     tempData.Username,
+			"mobile":       tempData.Mobile,
+			"deviceNumber": tempData.DeviceNumber,
+			"deviceModel":  tempData.DeviceModel,
+			"IccID":        tempData.IccID,
+			"operator":     tempData.Operator,
+			"address":      tempData.Address,
+			"comment":      tempData.Comment,
+		},
+	}
+	updateResult, err := collection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		zap.L().Error("更新数据失败", zap.Error(err))
+		returnData := map[string]interface{}{
+			"code": 201,
+			"msg":  "更新失败",
+			"data": err,
+		}
+
+		c.JSON(http.StatusOK, returnData)
+	}
+	zap.L().Info("更新数据成功", zap.Any("Matched documents and updated  documents", updateResult.ModifiedCount))
+	returnData := map[string]interface{}{
+		"code": 200,
+		"msg":  "更新成功",
+		"data": "",
+	}
+
+	c.JSON(http.StatusOK, returnData)
+
 }
 
 // CallbackWechat 回调地址
