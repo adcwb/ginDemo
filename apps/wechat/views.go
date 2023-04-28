@@ -315,15 +315,15 @@ func SaveWorkUserData(c *gin.Context) {
 func CallbackWechat(c *gin.Context) {
 	method := c.Request.Method
 	token := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpToken")
-	encodingAeskey := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpEncodingAes")
-	receiverId := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpReceiverId")
+	encodingAeskey := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpEncodingAesKey")
+	receiverId := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpID")
 	wxcpt := utils.NewWXBizMsgCrypt(token, encodingAeskey, receiverId, utils.XmlType)
 	if method == "GET" {
 		// 解析出url上的参数值如下：
 		verifyMsgSign, _ := c.GetQuery("msg_signature")
 		verifyTimestamp, _ := c.GetQuery("timestamp")
 		verifyNonce, _ := c.GetQuery("nonce")
-		verifyEchoStr, _ := c.GetQuery("echoStr")
+		verifyEchoStr, _ := c.GetQuery("echostr")
 		echoStr, cryptErr := wxcpt.VerifyURL(verifyMsgSign, verifyTimestamp, verifyNonce, verifyEchoStr)
 		if nil != cryptErr {
 			zap.L().Error("verifyUrl fail!", zap.String("cryptErrMsg", cryptErr.ErrMsg), zap.Int("cryptErrCode", cryptErr.ErrCode))
