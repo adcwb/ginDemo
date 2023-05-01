@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"ginDemo/global"
 	"github.com/go-redis/redis/v8"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
 	"time"
 )
@@ -89,7 +90,29 @@ type GetMessageStruct struct {
 		Origin         int    `json:"origin"`
 		ServiceUserid  string `json:"servicer_userid"`
 		MsgType        string `json:"msgtype"`
+		Event          struct {
+			EventType      string `json:"event_type"`
+			Scene          int    `json:"scene"`
+			OpenKfID       string `json:"open_kfid"`
+			ExternalUserid string `json:"external_userid"`
+			WelcomeCode    string `json:"welcome_code"`
+		} `json:"event"`
 	} `json:"msg_list"`
+}
+
+type MongoDBUserScheduleStruct struct {
+	userid         string
+	serviceState   int
+	sendTime       int
+	msgType        string
+	openKfId       string
+	externalUserid string
+}
+
+type SendMsgOnEventStruct struct {
+	ErrCode int    `json:"errcode"`
+	ErrMsg  string `json:"errmsg"`
+	MsgId   string `json:"msgid"`
 }
 
 // Queue 创建一个队列
@@ -109,6 +132,26 @@ func (q *Queue[T]) Dequeue() T {
 	item := q.items[0]
 	q.items = q.items[1:]
 	return item
+}
+
+type WorkSendData struct{}
+
+// Text 发送文本
+func (send *WorkSendData) Text(message string) map[string]string {
+	data := map[string]string{
+		"content": message,
+	}
+
+	return data
+}
+
+// Images 发送图片
+func (send *WorkSendData) Images(message string) map[string]string {
+	data := map[string]string{
+		"content": message,
+	}
+
+	return data
 }
 
 // GetWechatToken 获取企业微信Token
@@ -411,12 +454,13 @@ func GetServiceState(kfID, userID string) (ReturnData GetServiceStateStruct) {
 }
 
 // TransServiceState 变更会话状态
-func TransServiceState(kfID, userID string, state int) (ReturnData SetServiceStruct) {
+func TransServiceState(kfID, userID, jdKf string, state int) (ReturnData SetServiceStruct) {
 	token := GetWechatToken()
 	bodyData := map[string]interface{}{
 		"open_kfid":       kfID,
 		"external_userid": userID,
 		"service_state":   state,
+		"servicer_userid": jdKf,
 	}
 
 	body, err := json.Marshal(bodyData)
@@ -439,11 +483,26 @@ func TransServiceState(kfID, userID string, state int) (ReturnData SetServiceStr
 // GetMessage 同步消息
 func GetMessage(kfID, token string) (ReturnData GetMessageStruct) {
 	worktoken := GetWechatToken()
-	bodyData := map[string]interface{}{
-		"open_kfid":    kfID,
-		"token":        token,
-		"limit":        1000,
-		"voice_format": 0,
+
+	// Redis加缓存
+	ctx := context.Background()
+	redisData := GetRedisKey(ctx, "syncMsgNextCursor")
+	bodyData := make(map[string]interface{})
+	if redisData == "" {
+		bodyData = map[string]interface{}{
+			"token":        token,
+			"limit":        1000,
+			"voice_format": 0,
+			"open_kfid":    kfID,
+		}
+	} else {
+		bodyData = map[string]interface{}{
+			"cursor":       redisData,
+			"token":        token,
+			"limit":        1000,
+			"voice_format": 0,
+			"open_kfid":    kfID,
+		}
 	}
 
 	body, err := json.Marshal(bodyData)
@@ -452,6 +511,117 @@ func GetMessage(kfID, token string) (ReturnData GetMessageStruct) {
 	}
 
 	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/sync_msg?access_token="+worktoken, "POST", string(body), "")
+	if err != nil {
+		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+	}
+
+	err = json.Unmarshal(tempData, &ReturnData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+	if redisData != "" {
+		err = global.REDIS.Set(ctx, "syncMsgNextCursor", ReturnData.NextCursor, 0).Err()
+
+		if err != nil {
+			zap.L().Error("Redis Set Key Error", zap.String("keys", "syncMsgNextCursor"), zap.String("value", ReturnData.NextCursor), zap.Error(err))
+		}
+	}
+
+	// MongoDB 调度用户数据
+	collection := global.MONGO.Database("workWechat").Collection("userSchedule")
+
+	// 将同步到的数据全部缓存到MongoDB中
+	for _, v := range ReturnData.MsgList {
+		var result MongoDBUserScheduleStruct
+		filter := bson.M{"userid": v.ExternalUserid}
+		err = collection.FindOne(context.TODO(), filter).Decode(&result)
+		if err != nil {
+			zap.L().Error("查询数据失败", zap.Error(err))
+		}
+		if result.userid != "" {
+			update := bson.M{
+				"$set": bson.M{
+					"serviceState":   v.Event.Scene,
+					"sendTime":       v.SendTime,
+					"msgType":        v.MsgType,
+					"openKfId":       v.OpenKfID,
+					"externalUserid": v.ExternalUserid,
+				},
+			}
+
+			updateResult, err := collection.UpdateOne(context.TODO(), filter, update)
+			if err != nil {
+				zap.L().Error("更新数据失败", zap.Error(err))
+			}
+
+			zap.L().Info("更新数据成功", zap.Any("Matched documents and updated  documents", updateResult.ModifiedCount))
+
+		} else {
+			s1 := MongoDBUserScheduleStruct{
+				userid:         v.ExternalUserid,
+				serviceState:   v.Event.Scene,
+				sendTime:       v.SendTime,
+				msgType:        v.MsgType,
+				openKfId:       v.OpenKfID,
+				externalUserid: v.ExternalUserid,
+			}
+			insertResult, err := collection.InsertOne(context.TODO(), s1)
+			if err != nil {
+				zap.L().Error("插入数据失败", zap.Error(err))
+			}
+			zap.L().Info("插入数据成功", zap.Any("data", insertResult.InsertedID))
+		}
+	}
+
+	return ReturnData
+}
+
+// SendMsgOnEvent 发送事件响应消息
+func SendMsgOnEvent(code string) (ReturnData SendMsgOnEventStruct) {
+	worktoken := GetWechatToken()
+	temp := new(WorkSendData)
+
+	bodyData := map[string]interface{}{
+		"code":    code,
+		"msgtype": "text",
+		"text":    temp.Text("欢迎咨询，你已进入人工会话!"),
+	}
+
+	body, err := json.Marshal(bodyData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/send_msg_on_event?access_token="+worktoken, "POST", string(body), "")
+	if err != nil {
+		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+	}
+	err = json.Unmarshal(tempData, &ReturnData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	return ReturnData
+}
+
+// SendMsgData 发送普通消息
+func SendMsgData(userID, kfID, message string) (ReturnData SendMsgOnEventStruct) {
+	worktoken := GetWechatToken()
+	temp := new(WorkSendData)
+
+	bodyData := map[string]interface{}{
+		"touser":    userID,
+		"open_kfid": kfID,
+		"msgtype":   "text",
+		"text":      temp.Text(message),
+	}
+
+	body, err := json.Marshal(bodyData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/send_msg?access_token="+worktoken, "POST", string(body), "")
 	if err != nil {
 		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
 	}

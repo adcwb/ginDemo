@@ -1,14 +1,18 @@
 package utils
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"ginDemo/global"
+	"github.com/go-redis/redis/v8"
 	"github.com/gofrs/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"io"
+	"math"
 	"math/rand"
 	"net"
 	"net/http"
@@ -361,4 +365,58 @@ func XmlToJson(xmlStr string) (string, error) {
 	}
 
 	return string(jsonBytes), nil
+}
+
+// GetRandomElement 返回数组的随机一个元素
+func GetRandomElement(arr interface{}) interface{} {
+	rand.Seed(time.Now().UnixNano())
+
+	switch a := arr.(type) {
+	case []int:
+		return a[rand.Intn(len(a))]
+	case []string:
+		return a[rand.Intn(len(a))]
+	default:
+		return nil
+	}
+}
+
+func GetRedisKey(ctx context.Context, key string) (result string) {
+	result, err := global.REDIS.Get(ctx, key).Result()
+
+	if err == redis.Nil {
+		zap.L().Error("RedisKey "+key+"does not exist", zap.Error(err))
+
+	} else if err != nil {
+		zap.L().Error("RedisKey "+key+"does not exist", zap.Error(err))
+	}
+	// 若有缓存直接返回
+	if len(result) > 5 && result != "" {
+		return result
+	} else {
+		return ""
+	}
+}
+
+// GenerateRandomNumber 返回随机数字
+func GenerateRandomNumber(digits int) string {
+	rand.Seed(time.Now().UnixNano())
+
+	// 生成指定位数的随机数字
+	randNum := rand.Intn(int(math.Pow10(digits)))
+
+	// 将结果转化为字符串并返回
+	return strconv.Itoa(randNum)
+}
+
+func IsFutureTime(timeStr string) bool {
+	inputTime, err := time.Parse("2006-01-02", timeStr)
+	if err != nil {
+		fmt.Println("Invalid time format")
+		return false
+	}
+
+	currentTime := time.Now()
+
+	return inputTime.After(currentTime)
 }
