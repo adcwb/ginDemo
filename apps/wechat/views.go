@@ -330,7 +330,7 @@ func CallbackWechat(c *gin.Context) {
 		}
 		zap.L().Info("verifyUrl success echoStr", zap.String("echoStr", string(echoStr)))
 		// 验证URL成功，将sEchoStr返回
-		c.JSON(http.StatusOK, string(echoStr))
+		c.String(http.StatusOK, string(echoStr))
 		return
 	} else if method == "POST" {
 		reqMsgSign, _ := c.GetQuery("msg_signature")
