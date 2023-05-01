@@ -343,18 +343,52 @@ func CallbackWechat(c *gin.Context) {
 		if nil != cryptErr {
 			zap.L().Error("DecryptMsg fail!", zap.String("cryptErrMsg", cryptErr.ErrMsg), zap.Int("cryptErrCode", cryptErr.ErrCode))
 		}
-		zap.L().Info("after decrypt msg: ", zap.String("echoStr", string(msg)))
-		// TODO: 解析出明文xml标签的内容进行处理
-		// For example:
-
+		zap.L().Info("收到企业微信事件回调，msg: ", zap.String("echoStr", string(msg)))
+		/*
+			事件回调参数示例：
+			<xml>
+				<ToUserName><![CDATA[wwab4a127c8713c62b]]></ToUserName>
+				<CreateTime>1682903053</CreateTime>
+				<MsgType><![CDATA[event]]></MsgType>
+				<Event><![CDATA[kf_msg_or_event]]></Event>
+				<Token><![CDATA[ENC9u7kzGfMY8YzTKxtDnqJk4gVpAsqTeb256aSkd1h476z]]></Token>
+				<OpenKfId><![CDATA[wk5aTbYAAAHF-IN-YZtmyn8s4369j47w]]></OpenKfId>
+			</xml>
+		*/
 		var msgContent MsgContent
 		err := xml.Unmarshal(msg, &msgContent)
 		if nil != err {
 			zap.L().Error("xml Unmarshal失败!", zap.Error(err))
 		}
+		// 获取客服账号接待人员列表
+		ServiceList := utils.GetServiceList(msgContent.OpenKfId)
+
+		// 将接待人员放入到队列中
+		userID := utils.Queue[string]{}
+		for _, v := range ServiceList.ServiceList {
+			if v.Status == 0 {
+				userID.Enqueue(v.Userid)
+			}
+		}
+
+		// 分配会话
+		ServiceState := utils.GetServiceState(msgContent.OpenKfId, msgContent.ToUserName)
+		zap.L().Info("获取会话状态返回数据：", zap.Any("data", ServiceState))
+		userid := userID.Dequeue()
+		TransServiceStateData := utils.TransServiceState(msgContent.OpenKfId, userid, 3)
+		zap.L().Info("分配会话状态返回数据：", zap.Any("data", TransServiceStateData))
+		// 重新讲客服ID放回队列
+		userID.Enqueue(userid)
 
 	} else {
 		c.String(http.StatusNotFound, "404 page not found!")
 		return
 	}
+}
+
+// GetKfList 获取接待人员列表
+func GetKfList(c *gin.Context) {
+	//ReturnData := utils.GetKfIDList()
+	ReturnData := utils.GetServiceList("wk5aTbYAAAHF-IN-YZtmyn8s4369j47w")
+	c.JSON(http.StatusOK, ReturnData)
 }

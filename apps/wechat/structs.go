@@ -17,13 +17,16 @@ type GetTicketReturnStruct struct {
 }
 
 type MsgContent struct {
-	ToUsername   string `xml:"ToUserName"`
 	FromUsername string `xml:"FromUserName"`
 	CreateTime   uint32 `xml:"CreateTime"`
 	MsgType      string `xml:"MsgType"`
 	Content      string `xml:"Content"`
-	Msgid        string `xml:"MsgId"`
-	Agentid      uint32 `xml:"AgentId"`
+	MsgId        string `xml:"MsgId"`
+	AgentId      uint32 `xml:"AgentId"`
+	ToUserName   string `xml:"ToUserName"`
+	Event        string `xml:"Event"`
+	Token        string `xml:"Token"`
+	OpenKfId     string `xml:"OpenKfId"`
 }
 
 type GetWorkUserDataStruct struct {

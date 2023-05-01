@@ -1114,3 +1114,33 @@
 {"level":"INFO","time":"2023-05-01T08:43:27.640+0800","caller":"middleware/logs.go:69","msg":"/chat/Callback","status":200,"method":"GET","path":"/chat/Callback","query":"msg_signature=f2ade7e8b99a73091c5695ae341a2014dff1f94e&timestamp=1682688390&nonce=1682916501&echostr=BArRhPOtghzw8%2Fm2jLRwgZNDJ8TdWcBNpR4gWsgrJKuA31ge1sc3XDnawQgr%2Fz5flQY8YymbNnd7hrWvHJL%2Fvw%3D%3D","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.32.2","errors":"","cost":0.0005175}
 {"level":"INFO","time":"2023-05-01T08:43:48.641+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
 {"level":"INFO","time":"2023-05-01T08:43:48.653+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"INFO","time":"2023-05-01T08:43:51.853+0800","caller":"wechat/views.go:332","msg":"verifyUrl success echoStr","echoStr":"1953303552965204439"}
+{"level":"INFO","time":"2023-05-01T08:43:51.853+0800","caller":"middleware/logs.go:69","msg":"/chat/Callback","status":200,"method":"GET","path":"/chat/Callback","query":"msg_signature=f2ade7e8b99a73091c5695ae341a2014dff1f94e&timestamp=1682688390&nonce=1682916501&echostr=BArRhPOtghzw8%2Fm2jLRwgZNDJ8TdWcBNpR4gWsgrJKuA31ge1sc3XDnawQgr%2Fz5flQY8YymbNnd7hrWvHJL%2Fvw%3D%3D","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.32.2","errors":"","cost":0}
+{"level":"INFO","time":"2023-05-01T09:31:45.014+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-05-01T09:31:45.026+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"ERROR","time":"2023-05-01T09:31:56.347+0800","caller":"utils/workWechat.go:58","msg":"RedisKey PhoneNumbers does not exist","error":"redis: nil"}
+{"level":"DEBUG","time":"2023-05-01T09:31:56.347+0800","caller":"utils/http.go:23","msg":"interface start","data":"2023-05-01 09:31:56"}
+{"level":"DEBUG","time":"2023-05-01T09:32:00.338+0800","caller":"utils/http.go:83","msg":"interface return","data: ":"2023-05-01 09:32:00"}
+{"level":"DEBUG","time":"2023-05-01T09:32:00.350+0800","caller":"utils/http.go:23","msg":"interface start","data":"2023-05-01 09:32:00"}
+{"level":"DEBUG","time":"2023-05-01T09:32:00.605+0800","caller":"utils/http.go:83","msg":"interface return","data: ":"2023-05-01 09:32:00"}
+{"level":"INFO","time":"2023-05-01T09:32:00.605+0800","caller":"middleware/logs.go:69","msg":"/chat/GetKfList","status":200,"method":"GET","path":"/chat/GetKfList","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.32.2","errors":"","cost":4.2574413}
+{"level":"INFO","time":"2023-05-01T09:32:31.926+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-05-01T09:32:31.944+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"DEBUG","time":"2023-05-01T09:32:39.059+0800","caller":"utils/http.go:23","msg":"interface start","data":"2023-05-01 09:32:39"}
+{"level":"DEBUG","time":"2023-05-01T09:32:42.331+0800","caller":"utils/http.go:83","msg":"interface return","data: ":"2023-05-01 09:32:42"}
+{"level":"INFO","time":"2023-05-01T09:32:42.331+0800","caller":"middleware/logs.go:69","msg":"/chat/GetKfList","status":200,"method":"GET","path":"/chat/GetKfList","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.32.2","errors":"","cost":3.272204}
+{"level":"INFO","time":"2023-05-01T09:35:48.414+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-05-01T09:35:48.433+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"DEBUG","time":"2023-05-01T09:35:57.997+0800","caller":"utils/http.go:23","msg":"interface start","data":"2023-05-01 09:35:57"}
+{"level":"DEBUG","time":"2023-05-01T09:36:01.271+0800","caller":"utils/http.go:83","msg":"interface return","data: ":"2023-05-01 09:36:01"}
+{"level":"INFO","time":"2023-05-01T09:36:01.272+0800","caller":"middleware/logs.go:69","msg":"/chat/GetKfList","status":200,"method":"GET","path":"/chat/GetKfList","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.32.2","errors":"","cost":3.2746078}
+{"level":"INFO","time":"2023-05-01T09:49:54.353+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-05-01T09:49:54.366+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"DEBUG","time":"2023-05-01T09:49:59.866+0800","caller":"utils/http.go:23","msg":"interface start","data":"2023-05-01 09:49:59"}
+{"level":"DEBUG","time":"2023-05-01T09:50:04.297+0800","caller":"utils/http.go:83","msg":"interface return","data: ":"2023-05-01 09:50:04"}
+{"level":"INFO","time":"2023-05-01T09:50:04.297+0800","caller":"middleware/logs.go:69","msg":"/chat/GetKfList","status":200,"method":"GET","path":"/chat/GetKfList","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.32.2","errors":"","cost":4.4312403}
+{"level":"INFO","time":"2023-05-01T10:48:26.901+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-05-01T10:48:26.914+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}
+{"level":"DEBUG","time":"2023-05-01T10:48:30.295+0800","caller":"utils/http.go:23","msg":"interface start","data":"2023-05-01 10:48:30"}
+{"level":"DEBUG","time":"2023-05-01T10:48:33.610+0800","caller":"utils/http.go:83","msg":"interface return","data: ":"2023-05-01 10:48:33"}
+{"level":"INFO","time":"2023-05-01T10:48:33.610+0800","caller":"middleware/logs.go:69","msg":"/chat/GetKfList","status":200,"method":"GET","path":"/chat/GetKfList","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.32.2","errors":"","cost":3.3154096}

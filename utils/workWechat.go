@@ -37,6 +37,64 @@ type MsgContent struct {
 	Agentid      uint32 `xml:"AgentId"`
 }
 
+type GetKfIDListStruct struct {
+	ErrCode     int    `json:"errcode"`
+	ErrMsg      string `json:"errmsg"`
+	AccountList []struct {
+		OpenKfId        string `json:"open_kfid"`
+		Name            string `json:"name"`
+		Avatar          string `json:"avatar"`
+		ManagePrivilege bool   `json:"manage_privilege"`
+	} `json:"account_list"`
+}
+
+type GetServiceListStruct struct {
+	ErrCode     int    `json:"errcode"`
+	ErrMsg      string `json:"errmsg"`
+	ServiceList []struct {
+		Userid       string `json:"userid,omitempty"`
+		Status       int    `json:"status,omitempty"`
+		DepartmentId int    `json:"department_id,omitempty"`
+	} `json:"servicer_list"`
+}
+
+type SetServiceStruct struct {
+	ErrCode    int    `json:"errcode"`
+	ErrMsg     string `json:"errmsg"`
+	ResultList []struct {
+		Userid       string `json:"userid,omitempty"`
+		ErrCode      int    `json:"errcode"`
+		ErrMsg       string `json:"errmsg"`
+		DepartmentId int    `json:"department_id,omitempty"`
+	} `json:"result_list"`
+}
+
+type GetServiceStateStruct struct {
+	ErrCode        int    `json:"errcode"`
+	ErrMsg         string `json:"errmsg"`
+	ServiceState   int    `json:"service_state"`
+	ServicerUserid string `json:"servicer_userid"`
+}
+
+// Queue 创建一个队列
+type Queue[T string | int64] struct {
+	items []T
+}
+
+func (q *Queue[T]) Enqueue(item T) {
+	q.items = append(q.items, item)
+}
+
+func (q *Queue[T]) Dequeue() T {
+	if len(q.items) == 0 {
+		var temp T
+		return temp
+	}
+	item := q.items[0]
+	q.items = q.items[1:]
+	return item
+}
+
 // GetWechatToken 获取企业微信Token
 func GetWechatToken() (result string) {
 	ctx := context.Background()
@@ -213,4 +271,151 @@ func GenerateSignature(noncestr string, jsapiTicket string, timestamp int64, url
 	h.Write([]byte(string1))
 	signature := fmt.Sprintf("%x", h.Sum(nil))
 	return signature
+}
+
+// GetKfIDList 获取客服账号列表
+func GetKfIDList() (data GetKfIDListStruct) {
+	token := GetWechatToken()
+	bodyData := map[string]int64{
+		"offset": 0,
+		"limit":  100,
+	}
+	body, err := json.Marshal(bodyData)
+	if err != nil {
+		zap.L().Error("Json序列化失败", zap.Error(err))
+	}
+	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/account/list?access_token="+token, "POST", string(body), "")
+	var ReturnData GetKfIDListStruct
+	err = json.Unmarshal(tempData, &ReturnData)
+	if err != nil {
+		zap.L().Error("Json序列化失败", zap.Error(err))
+	}
+	/*
+		返回数据示例
+		{wk5aTbYAAAfXatwdbTTfQB9JY_TI96vQ 点击联系在线客服 https://wework.qpic.cn/wwpic/329236_JjHmAOdGQGeRr5e_1678626977/0 false}
+		{wk5aTbYAAAHF-IN-YZtmyn8s4369j47w 测试API https://wework.qpic.cn/wwpic/236392_Ic0lpXNlQIOpQMB_1678541469/0 true}
+		{wk5aTbYAAAjGJ5KYoUiOB3wige3YTvHA 深圳优度通信科技有限公司客服 https://wwcdn.weixin.qq.com/node/wework/images/kf_head_image_url_1.png false}
+		{wk5aTbYAAAzssxTaC6LK2NOhFPMKLkjw 优度无线宽带客服 http://wx.qlogo.cn/finderhead/Q3auHgzwzM78Qvu8sxQrQz4nrX7iac2BzqUnVOpbbjbiaBhTeUyKQicDg/0/0 false}
+	*/
+	if ReturnData.ErrMsg == "ok" {
+		for i, v := range ReturnData.AccountList {
+			fmt.Println(i, v)
+		}
+	}
+
+	return ReturnData
+}
+
+// GetServiceList 获取客服账号接待人员列表
+func GetServiceList(kfID string) (ReturnData GetServiceListStruct) {
+	token := GetWechatToken()
+	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/servicer/list?access_token="+token+"&open_kfid="+kfID, "GET", "", "")
+	if err != nil {
+		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+	}
+
+	err = json.Unmarshal(tempData, &ReturnData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+	return ReturnData
+}
+
+// SetService 添加客服账号接待人员
+func SetService(kfID string, userData []string) {
+	token := GetWechatToken()
+	bodyData := map[string]interface{}{
+		"open_kfid":   kfID,
+		"userid_list": userData,
+	}
+
+	body, err := json.Marshal(bodyData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/servicer/add?access_token="+token, "POST", string(body), "")
+	if err != nil {
+		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+	}
+	var ReturnData SetServiceStruct
+	err = json.Unmarshal(tempData, &ReturnData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+}
+
+// DelService 删除客服账号接待人员
+func DelService(kfID string, userData []string) {
+	token := GetWechatToken()
+	bodyData := map[string]interface{}{
+		"open_kfid":   kfID,
+		"userid_list": userData,
+	}
+
+	body, err := json.Marshal(bodyData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/servicer/del?access_token="+token, "POST", string(body), "")
+	if err != nil {
+		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+	}
+	var ReturnData SetServiceStruct
+	err = json.Unmarshal(tempData, &ReturnData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+}
+
+// GetServiceState 获取会话状态
+func GetServiceState(kfID, userID string) (ReturnData GetServiceStateStruct) {
+	token := GetWechatToken()
+	bodyData := map[string]interface{}{
+		"open_kfid":       kfID,
+		"external_userid": userID,
+	}
+
+	body, err := json.Marshal(bodyData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/service_state/get?access_token="+token, "POST", string(body), "")
+	if err != nil {
+		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+	}
+
+	err = json.Unmarshal(tempData, &ReturnData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+	return ReturnData
+}
+
+// TransServiceState 变更会话状态
+func TransServiceState(kfID, userID string, state int) (ReturnData SetServiceStruct) {
+	token := GetWechatToken()
+	bodyData := map[string]interface{}{
+		"open_kfid":       kfID,
+		"external_userid": userID,
+		"service_state":   state,
+	}
+
+	body, err := json.Marshal(bodyData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/service_state/trans?access_token="+token, "POST", string(body), "")
+	if err != nil {
+		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+	}
+	err = json.Unmarshal(tempData, &ReturnData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	return ReturnData
 }
