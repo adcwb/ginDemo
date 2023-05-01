@@ -370,12 +370,14 @@ func CallbackWechat(c *gin.Context) {
 				userID.Enqueue(v.Userid)
 			}
 		}
-
+		// 同步消息
+		getMessageData := utils.GetMessage(msgContent.OpenKfId, msgContent.Token)
+		zap.L().Info("同步消息状态返回数据：", zap.Any("data", getMessageData))
 		// 分配会话
-		ServiceState := utils.GetServiceState(msgContent.OpenKfId, msgContent.ToUserName)
+		ServiceState := utils.GetServiceState(msgContent.OpenKfId, getMessageData.MsgList[0].ExternalUserid)
 		zap.L().Info("获取会话状态返回数据：", zap.Any("data", ServiceState))
 		userid := userID.Dequeue()
-		TransServiceStateData := utils.TransServiceState(msgContent.OpenKfId, userid, 3)
+		TransServiceStateData := utils.TransServiceState(msgContent.OpenKfId, getMessageData.MsgList[0].ExternalUserid, 3)
 		zap.L().Info("分配会话状态返回数据：", zap.Any("data", TransServiceStateData))
 		// 重新讲客服ID放回队列
 		userID.Enqueue(userid)

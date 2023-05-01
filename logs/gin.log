@@ -1144,3 +1144,5 @@
 {"level":"DEBUG","time":"2023-05-01T10:48:30.295+0800","caller":"utils/http.go:23","msg":"interface start","data":"2023-05-01 10:48:30"}
 {"level":"DEBUG","time":"2023-05-01T10:48:33.610+0800","caller":"utils/http.go:83","msg":"interface return","data: ":"2023-05-01 10:48:33"}
 {"level":"INFO","time":"2023-05-01T10:48:33.610+0800","caller":"middleware/logs.go:69","msg":"/chat/GetKfList","status":200,"method":"GET","path":"/chat/GetKfList","query":"","ip":"192.168.31.200","user-agent":"PostmanRuntime/7.32.2","errors":"","cost":3.3154096}
+{"level":"INFO","time":"2023-05-01T10:56:14.110+0800","caller":"initialization/init.go:56","msg":"MongoDB初始化成功!"}
+{"level":"INFO","time":"2023-05-01T10:56:14.122+0800","caller":"initialization/init.go:79","msg":"Redis初始化成功"}

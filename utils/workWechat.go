@@ -76,6 +76,22 @@ type GetServiceStateStruct struct {
 	ServicerUserid string `json:"servicer_userid"`
 }
 
+type GetMessageStruct struct {
+	ErrCode    int    `json:"errcode"`
+	ErrMsg     string `json:"errmsg"`
+	NextCursor string `json:"next_cursor"`
+	HasMore    int    `json:"has_more"`
+	MsgList    []struct {
+		MsgID          string `json:"msgid"`
+		OpenKfID       string `json:"open_kfid"`
+		ExternalUserid string `json:"external_userid"`
+		SendTime       int    `json:"send_time"`
+		Origin         int    `json:"origin"`
+		ServiceUserid  string `json:"servicer_userid"`
+		MsgType        string `json:"msgtype"`
+	} `json:"msg_list"`
+}
+
 // Queue 创建一个队列
 type Queue[T string | int64] struct {
 	items []T
@@ -409,6 +425,33 @@ func TransServiceState(kfID, userID string, state int) (ReturnData SetServiceStr
 	}
 
 	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/service_state/trans?access_token="+token, "POST", string(body), "")
+	if err != nil {
+		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+	}
+	err = json.Unmarshal(tempData, &ReturnData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	return ReturnData
+}
+
+// GetMessage 同步消息
+func GetMessage(kfID, token string) (ReturnData GetMessageStruct) {
+	worktoken := GetWechatToken()
+	bodyData := map[string]interface{}{
+		"open_kfid":    kfID,
+		"token":        token,
+		"limit":        1000,
+		"voice_format": 0,
+	}
+
+	body, err := json.Marshal(bodyData)
+	if err != nil {
+		zap.L().Error("Json序列化失败！", zap.Error(err))
+	}
+
+	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/sync_msg?access_token="+worktoken, "POST", string(body), "")
 	if err != nil {
 		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
 	}
