@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"ginDemo/global"
 	"ginDemo/utils"
 	"github.com/gin-gonic/gin"
@@ -449,6 +450,7 @@ func CallbackWechat(c *gin.Context) {
 						zap.L().Error("插入数据失败", zap.Error(err))
 					}
 					zap.L().Info("插入数据成功", zap.Any("data", insertResult.InsertedID))
+					fmt.Println("xxx")
 
 				}
 				// 重新讲客服ID放回队列
