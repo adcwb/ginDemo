@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"ginDemo/global"
 	"ginDemo/utils"
 	"github.com/gin-gonic/gin"
@@ -311,165 +310,103 @@ func SaveWorkUserData(c *gin.Context) {
 
 }
 
-// CallbackWechat 回调地址
-func CallbackWechat(c *gin.Context) {
-	method := c.Request.Method
+// GetCallbackWechat GET请求回调地址
+func GetCallbackWechat(c *gin.Context) {
 	token := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpToken")
 	encodingAeskey := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpEncodingAesKey")
 	receiverId := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpID")
 	wxcpt := utils.NewWXBizMsgCrypt(token, encodingAeskey, receiverId, utils.XmlType)
-	if method == "GET" {
-		// 解析出url上的参数值如下：
-		verifyMsgSign, _ := c.GetQuery("msg_signature")
-		verifyTimestamp, _ := c.GetQuery("timestamp")
-		verifyNonce, _ := c.GetQuery("nonce")
-		verifyEchoStr, _ := c.GetQuery("echostr")
-		echoStr, cryptErr := wxcpt.VerifyURL(verifyMsgSign, verifyTimestamp, verifyNonce, verifyEchoStr)
-		if nil != cryptErr {
-			zap.L().Error("verifyUrl fail!", zap.String("cryptErrMsg", cryptErr.ErrMsg), zap.Int("cryptErrCode", cryptErr.ErrCode))
-		}
-		zap.L().Info("verifyUrl success echoStr", zap.String("echoStr", string(echoStr)))
-		// 验证URL成功，将sEchoStr返回
-		c.String(http.StatusOK, string(echoStr))
-		return
-	} else if method == "POST" {
-		reqMsgSign, _ := c.GetQuery("msg_signature")
-		reqTimestamp, _ := c.GetQuery("timestamp")
-		reqNonce, _ := c.GetQuery("nonce")
-		// post请求的密文数据
-		reqData, _ := c.GetRawData()
 
-		msg, cryptErr := wxcpt.DecryptMsg(reqMsgSign, reqTimestamp, reqNonce, reqData)
-		if nil != cryptErr {
-			zap.L().Error("DecryptMsg fail!", zap.String("cryptErrMsg", cryptErr.ErrMsg), zap.Int("cryptErrCode", cryptErr.ErrCode))
-		}
-		zap.L().Info("收到企业微信事件回调，msg: ", zap.String("echoStr", string(msg)))
-		/*
-			事件回调参数示例：
-			<xml>
-				<ToUserName><![CDATA[wwab4a127c8713c62b]]></ToUserName>
-				<CreateTime>1682903053</CreateTime>
-				<MsgType><![CDATA[event]]></MsgType>
-				<Event><![CDATA[kf_msg_or_event]]></Event>
-				<Token><![CDATA[ENC9u7kzGfMY8YzTKxtDnqJk4gVpAsqTeb256aSkd1h476z]]></Token>
-				<OpenKfId><![CDATA[wk5aTbYAAAHF-IN-YZtmyn8s4369j47w]]></OpenKfId>
-			</xml>
-		*/
-		var msgContent MsgContent
-		err := xml.Unmarshal(msg, &msgContent)
-		if nil != err {
-			zap.L().Error("xml Unmarshal失败!", zap.Error(err))
-		}
-		// 获取客服账号接待人员列表
-		ServiceList := utils.GetServiceList(msgContent.OpenKfId)
-
-		// 将接待人员放入到队列中
-		userID := utils.Queue[string]{}
-		for _, v := range ServiceList.ServiceList {
-			if v.Status == 0 {
-				userID.Enqueue(v.Userid)
-			}
-		}
-		// 同步消息
-		getMessageData := utils.GetMessage(msgContent.OpenKfId, msgContent.Token)
-		zap.L().Info("同步消息状态返回数据：", zap.Any("data", getMessageData))
-
-		// 分配会话, 从MongoDB中获取所有的ExternalUserid
-		collection := global.MONGO.Database("workWechat").Collection("userSchedule")
-
-		var result []string
-		filter := bson.D{}
-		cur, err := collection.Find(context.TODO(), filter)
-		if err != nil {
-			zap.L().Error("查询数据失败", zap.Error(err))
-		}
-
-		for cur.Next(context.TODO()) {
-			// 创建一个值，将单个文档解码为该值
-			var elem utils.MongoDBUserScheduleStruct
-			err := cur.Decode(&elem)
-			if err != nil {
-				zap.L().Error("读取文件失败", zap.Error(err))
-			}
-			go utils.GetServiceState(msgContent.OpenKfId, elem.ExternalUserid)
-			//result = append(result, elem.ExternalUserid)
-			// 判断会话
-			if elem.ServiceState != 4 {
-				result = append(result, elem.ExternalUserid)
-			}
-		}
-
-		if err := cur.Err(); err != nil {
-			zap.L().Error("读取文件失败", zap.Error(err))
-		}
-
-		for _, v := range result {
-			loc, _ := time.LoadLocation("Asia/Shanghai")
-			now := time.Now().In(loc)
-			//fmt.Println("当前时间：", now.Format("2006-01-02 15:04:05"))
-			start, _ := time.ParseInLocation("2006-01-02 15:04:05", now.Format("2006-01-02")+" 09:00:00", loc)
-			end, _ := time.ParseInLocation("2006-01-02 15:04:05", now.Format("2006-01-02")+" 21:30:00", loc)
-			if now.After(start) && now.Before(end) {
-				//fmt.Println("当前时间在09:00~21:30之间")
-				userid := userID.Dequeue() // 从客服队列中获取要分配的客服
-				/*
-					将当前客服正在接待的客户放入MongoDB
-					{
-						ServiceUserid string `json:"servicer_userid"`			        // 客服ID
-						OpenKfId       string `json:"open_kfid,omitempty"`			    // 客服账号
-						ExternalUseridList string `json:"external_userid,omitempty"`    // 会话客户
-						ServiceStatus  int `json:"servicer_userid"`
-					}
-				*/
-
-				type ServiceUserHistoryStruct struct {
-					ServiceUserid  string `bson:"serviceUserid"`  // 接待人员ID
-					OpenKfId       string `bson:"openKfId"`       // 客服账号
-					ExternalUserid string `bson:"externalUserid"` // 用户ID
-					ServiceStatus  int    `bson:"serviceStatus"`  // 会话状态 1 接入中  0 会话结束 2 会话超时结束
-					ServiceData    string `bson:"serviceData"`    // 会话接入时间
-				}
-
-				TransServiceStateData := utils.TransServiceState(msgContent.OpenKfId, v, userid, 3)
-				zap.L().Info("分配会话状态返回数据：", zap.Any("data", TransServiceStateData))
-
-				if TransServiceStateData.Errcode == 0 {
-					// 判断当前客服正在接待的人数是否超出，若超出则分配到下一个
-					// 会话分配成功，记录哪个客户分配给哪个客服了
-					ServiceUserHistoryMongo := global.MONGO.Database("workWechat").Collection("ServiceUserHistory")
-					data := ServiceUserHistoryStruct{
-						ServiceUserid:  userid,
-						OpenKfId:       msgContent.OpenKfId,
-						ExternalUserid: v,
-						ServiceStatus:  1,
-						ServiceData:    now.Format("2006-01-02 15:04:05"),
-					}
-
-					insertResult, err := ServiceUserHistoryMongo.InsertOne(context.TODO(), data)
-					if err != nil {
-						zap.L().Error("插入数据失败", zap.Error(err))
-					}
-					zap.L().Info("插入数据成功", zap.Any("data", insertResult.InsertedID))
-					fmt.Println("xxx")
-
-				}
-				// 重新讲客服ID放回队列
-				userID.Enqueue(userid)
-
-			} else {
-				//fmt.Println("当前时间不在09:00~21:30之间")
-				// 推送客服不在线的消息
-				sendDataReturn := utils.SendMsgData(v, msgContent.OpenKfId, "您好，非常感谢您的咨询~ \n"+
-					"很抱歉告知您，此时是我们的非工作时间，我们的客服人员已下班。如果您有任何问题或需求，请您在工作时间(09:00~21:30)再次联系我们，我们将竭诚为您提供满意的服务。感谢您的理解和支持，祝您生活愉快！")
-				zap.L().Info("发送普通消息返回数据：", zap.Any("data", sendDataReturn))
-				TransServiceStateData := utils.TransServiceState(msgContent.OpenKfId, v, "", 4)
-				zap.L().Info("分配会话状态返回数据：", zap.Any("data", TransServiceStateData))
-			}
-		}
-	} else {
-		c.String(http.StatusNotFound, "404 page not found!")
-		return
+	// 解析出url上的参数值如下：
+	verifyMsgSign, _ := c.GetQuery("msg_signature")
+	verifyTimestamp, _ := c.GetQuery("timestamp")
+	verifyNonce, _ := c.GetQuery("nonce")
+	verifyEchoStr, _ := c.GetQuery("echostr")
+	echoStr, cryptErr := wxcpt.VerifyURL(verifyMsgSign, verifyTimestamp, verifyNonce, verifyEchoStr)
+	if nil != cryptErr {
+		zap.L().Error("verifyUrl fail!", zap.String("cryptErrMsg", cryptErr.ErrMsg), zap.Int("cryptErrCode", cryptErr.ErrCode))
 	}
+	zap.L().Info("verifyUrl success echoStr", zap.String("echoStr", string(echoStr)))
+	// 验证URL成功，将sEchoStr返回
+	c.String(http.StatusOK, string(echoStr))
+}
+
+// PostCallbackWechat POST请求回调地址
+func PostCallbackWechat(c *gin.Context) {
+	token := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpToken")
+	encodingAeskey := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpEncodingAesKey")
+	receiverId := global.CONFIG.GetString(global.CONFIG.GetString("RunConfig") + ".WorkWechatCorpID")
+	wxcpt := utils.NewWXBizMsgCrypt(token, encodingAeskey, receiverId, utils.XmlType)
+
+	reqMsgSign, _ := c.GetQuery("msg_signature")
+	reqTimestamp, _ := c.GetQuery("timestamp")
+	reqNonce, _ := c.GetQuery("nonce")
+	// post请求的密文数据
+	reqData, _ := c.GetRawData()
+
+	msg, cryptErr := wxcpt.DecryptMsg(reqMsgSign, reqTimestamp, reqNonce, reqData)
+	if nil != cryptErr {
+		zap.L().Error("DecryptMsg fail!", zap.String("cryptErrMsg", cryptErr.ErrMsg), zap.Int("cryptErrCode", cryptErr.ErrCode))
+	}
+	zap.L().Info("收到企业微信事件回调，msg: ", zap.String("echoStr", string(msg)))
+	/*
+		事件回调参数示例：
+		<xml>
+			<ToUserName><![CDATA[wwab4a127c8713c62b]]></ToUserName>
+			<CreateTime>1682903053</CreateTime>
+			<MsgType><![CDATA[event]]></MsgType>
+			<Event><![CDATA[kf_msg_or_event]]></Event>
+			<Token><![CDATA[ENC9u7kzGfMY8YzTKxtDnqJk4gVpAsqTeb256aSkd1h476z]]></Token>
+			<OpenKfId><![CDATA[wk5aTbYAAAHF-IN-YZtmyn8s4369j47w]]></OpenKfId>
+		</xml>
+	*/
+	var msgContent MsgContent
+	err := xml.Unmarshal(msg, &msgContent)
+	if nil != err {
+		zap.L().Error("xml Unmarshal失败!", zap.Error(err))
+	}
+
+	// 同步消息
+	getMessageData := utils.GetMessage(msgContent.OpenKfId, msgContent.Token)
+	zap.L().Info("同步消息状态返回数据：", zap.Any("data", getMessageData))
+
+	// 分配会话, 从MongoDB中获取所有的ExternalUserid
+	// 版本一，从MongoDB中读取所有数据，然后迭代循环
+	//collection := global.MONGO.Database("workWechat").Collection("userSchedule")
+	//
+	//var result []string
+	//filter := bson.D{}
+	//cur, err := collection.Find(context.TODO(), filter)
+	//if err != nil {
+	//	zap.L().Error("查询数据失败", zap.Error(err))
+	//}
+	//
+	//for cur.Next(context.TODO()) {
+	//	// 创建一个值，将单个文档解码为该值
+	//	var elem utils.MongoDBUserScheduleStruct
+	//	err := cur.Decode(&elem)
+	//	if err != nil {
+	//		zap.L().Error("读取文件失败", zap.Error(err))
+	//	}
+	//	go utils.GetServiceState(msgContent.OpenKfId, elem.ExternalUserid)
+	//	//result = append(result, elem.ExternalUserid)
+	//	// 判断会话
+	//	if elem.ServiceState != 4 {
+	//		result = append(result, elem.ExternalUserid)
+	//	}
+	//}
+	//
+	//if err := cur.Err(); err != nil {
+	//	zap.L().Error("读取文件失败", zap.Error(err))
+	//}
+
+	// 版本二
+
+	// 分配会话
+
+	//utils.ControlMessage()
+
+	c.JSON(http.StatusOK, "SUCCESS")
 }
 
 // GetKfList 获取接待人员列表
@@ -481,4 +418,22 @@ func GetKfList(c *gin.Context) {
 	zap.L().Info("同步消息状态返回数据：", zap.Any("data", getMessageData))
 
 	c.JSON(http.StatusOK, getMessageData)
+}
+
+// SendMessageQueue 将消息发送到队列
+func SendMessageQueue(c *gin.Context) {
+	b, _ := c.GetRawData()
+	err := SendQueue("kfQueue", string(b))
+	if err != nil {
+		zap.L().Error("向队列发送消息失败", zap.Error(err))
+	}
+	c.JSON(http.StatusOK, "OK")
+}
+
+func GetQueueMessage(c *gin.Context) {
+	queue, err := PullQueue("kfQueue")
+	if err != nil {
+		zap.L().Error("读取数据失败！", zap.Error(err))
+	}
+	c.JSON(http.StatusOK, string(queue))
 }

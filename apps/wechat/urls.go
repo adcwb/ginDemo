@@ -16,7 +16,10 @@ func Routers(e *gin.Engine) {
 		chat.GET("/GetWorkUserData", GetWorkUserData)
 		chat.POST("/SaveWorkUserData", SaveWorkUserData)
 		chat.GET("/GetKfList", GetKfList)
+		chat.POST("/SendMessageQueue", SendMessageQueue)
+		chat.GET("/GetQueueMessage", GetQueueMessage)
 
-		chat.Any("/Callback", CallbackWechat)
+		chat.GET("/Callback", GetCallbackWechat)
+		chat.POST("/Callback", PostCallbackWechat)
 	}
 }

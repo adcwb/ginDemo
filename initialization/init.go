@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"ginDemo/global"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-redis/redis/v8" // 注意导入的是新版本
 	socketio "github.com/googollee/go-socket.io"
@@ -118,13 +119,15 @@ func InitInfluxDB(env string) {
 // InitRabbitMQ 初始化消息队列
 func InitRabbitMQ(env string) {
 	var err error
-	global.RabbitMQConn, err = amqp.Dial(global.CONFIG.GetString(env + ".RabbitMQUrl"))
+	global.RabbitMQConn, err = amqp.Dial(global.CONFIG.GetString(env + ".RabbitMQURL"))
 	if err != nil {
 		zap.L().Error("RabbitMQ连接失败！", zap.Error(err))
 	} else {
 		global.RabbitMQChannel, err = global.RabbitMQConn.Channel()
 		if err != nil {
 			zap.L().Error("获取RabbitMQ channel失败！", zap.Error(err))
+		} else {
+			zap.L().Info("RabbitMQ初始化成功！")
 		}
 	}
 }
@@ -138,4 +141,18 @@ func InitSocketIO() {
 		fmt.Println("connected:", s.ID())
 		return nil
 	})
+}
+
+// InitAliYunOss 初始化阿里云OSS存储
+func InitAliYunOss(env string) {
+	var err error
+	AccessKeyId := global.CONFIG.GetString(env + ".AliYunStorageAccessKeyId")
+	AccessKeySecret := global.CONFIG.GetString(env + ".AliYunStorageAccessKeySecret")
+	Endpoint := global.CONFIG.GetString(env + ".AliYunStorageEndpoint")
+	global.AliStorage, err = oss.New(Endpoint, AccessKeyId, AccessKeySecret)
+	if err != nil {
+		zap.L().Error("初始化阿里云OSS存储失败，请核实原因！", zap.Error(err))
+	} else {
+		zap.L().Info("初始化阿里云OSS存储成功！")
+	}
 }

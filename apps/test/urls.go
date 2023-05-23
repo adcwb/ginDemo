@@ -13,6 +13,6 @@ func Routers(e *gin.Engine) {
 		test.GET("/stop", JobStop)
 		test.GET("/operator", Operator)
 		test.GET("/ThreeCodeMutualCheck", ThreeCodeMutualCheck)
-
+		test.POST("/SendMail", SendMail)
 	}
 }

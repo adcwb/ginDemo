@@ -265,3 +265,21 @@ func QueryDB(c *gin.Context) {
 		c.JSON(http.StatusOK, ReturnData)
 	}
 }
+
+type SendMailStruct struct {
+	Mail    string `json:"mail"`
+	Subject string `json:"subject"`
+	Message string `json:"message"`
+}
+
+func SendMail(c *gin.Context) {
+	b, _ := c.GetRawData()
+	var tempData SendMailStruct
+	err := json.Unmarshal(b, &tempData)
+	if err != nil {
+		zap.L().Error("Json序列化失败，请核对！", zap.Error(err))
+	}
+
+	utils.SendEmail(tempData.Mail, tempData.Subject, tempData.Message)
+	c.JSON(http.StatusOK, "OK")
+}

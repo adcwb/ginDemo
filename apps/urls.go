@@ -4,6 +4,7 @@ import (
 	_ "ginDemo/Docs"
 	"ginDemo/global"
 	"ginDemo/middleware"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
@@ -33,7 +34,7 @@ func Init(ENV string) *gin.Engine {
 	r := gin.Default()
 
 	// 启用性能分析工具
-	//pprof.Register(r)
+	pprof.Register(r)
 
 	r.Use(
 		// 跨域配置
@@ -56,7 +57,6 @@ func Init(ENV string) *gin.Engine {
 	r.NoRoute(func(c *gin.Context) {
 		c.HTML(http.StatusNotFound, "views/404.html", nil)
 	})
-
 	for _, opt := range options {
 		opt(r)
 	}

@@ -11,13 +11,13 @@ import (
 	"time"
 )
 
-func test() {
+func test1() {
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	fmt.Println(">>>>>>>>>>>>>>>>Hello Job !!>>>>>>>>>>>>>>>>")
 	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 }
 func JobTest(c *gin.Context) {
-	global.JobS.Every(1).Seconds().Do(test)
+	global.JobS.Every(1).Seconds().Do(test1)
 }
 
 func JobStop(c *gin.Context) {

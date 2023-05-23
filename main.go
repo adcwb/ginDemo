@@ -11,6 +11,7 @@ import (
 	"ginDemo/global"
 	"ginDemo/initialization"
 	"ginDemo/middleware"
+	"ginDemo/utils"
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
@@ -71,16 +72,22 @@ func main() {
 	//	zap.L().Error("数据库自动迁移失败！", zap.Error(err))
 	//}
 	// 初始化MongoDB数据库
-	initialization.InitMongoDBClient(global.CONFIG.GetString("RunConfig"))
+	initialization.InitMongoDBClient(ENV)
 
 	// 初始化Redis数据库
-	initialization.InitRedisClient(global.CONFIG.GetString("RunConfig"))
+	initialization.InitRedisClient(ENV)
 
 	// 初始化InfluxDB数据库
 	//initialization.InitInfluxDB(global.CONFIG.GetString("RunConfig"))
 
 	// 初始化RabbitMQ消息队列
-	//initialization.InitRabbitMQ(global.CONFIG.GetString("RunConfig"))
+	initialization.InitRabbitMQ(ENV)
+
+	// 初始化企业微信所需要的参数
+	utils.InitWorkWechatData(global.CONFIG.GetString(ENV + ".WechatOpenKfId"))
+
+	// 初始化阿里云OSS存储
+	//initialization.InitAliYunOss(global.CONFIG.GetString("RunConfig"))
 
 	// 初始化定时任务
 	//global.JobS = gocron.NewScheduler(time.UTC)

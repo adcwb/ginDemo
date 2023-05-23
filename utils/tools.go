@@ -16,6 +16,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"net/smtp"
 	"net/url"
 	"os"
 	"os/exec"
@@ -419,4 +420,24 @@ func IsFutureTime(timeStr string) bool {
 	currentTime := time.Now()
 
 	return inputTime.After(currentTime)
+}
+
+// SendEmail 邮件发送
+func SendEmail(to, subject, body string) {
+	from := "wanghao@adcwb.com"
+	password := "1a2b3c+D"
+	smtpServer := "smtp.qiye.aliyun.com"
+	smtpPort := "25"
+	contentType := "Content-Type: text/html; charset=UTF-8"
+	auth := smtp.PlainAuth("", from, password, smtpServer)
+	nickname := "SMTPMail"
+	message := []byte("To: " + to + "\r\nFrom: " + nickname + "<" + from + ">\r\nSubject: " + subject +
+		"\r\n" + contentType + "\r\n\r\n" + body)
+
+	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, from, []string{to}, message)
+	if err != nil {
+		zap.L().Error("邮件发送失败！", zap.Error(err))
+	}
+
+	zap.L().Info("邮件投递成功！", zap.String("toMail", to))
 }

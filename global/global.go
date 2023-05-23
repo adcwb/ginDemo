@@ -2,6 +2,7 @@ package global
 
 import (
 	"context"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/go-co-op/gocron"
 	"github.com/go-redis/redis/v8" // 注意导入的是新版本
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -24,5 +25,7 @@ var (
 	RabbitMQChannel *amqp.Channel
 	InflxDBv2       influxdb2.Client
 	InflxDBv1       client.Client
+	AliStorage      *oss.Client
 	lock            sync.RWMutex // 全局声明一把读写锁
+	ChanMap         sync.Map
 )

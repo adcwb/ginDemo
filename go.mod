@@ -6,6 +6,7 @@ require (
 	github.com/alibabacloud-go/darabonba-openapi v0.1.18
 	github.com/alibabacloud-go/dysmsapi-20170525/v2 v2.0.9
 	github.com/alibabacloud-go/tea v1.1.17
+	github.com/aliyun/aliyun-oss-go-sdk v2.2.7+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/gin-contrib/pprof v1.4.0
@@ -23,8 +24,6 @@ require (
 	github.com/smartwalle/xid v1.0.6
 	github.com/spf13/viper v1.10.1
 	github.com/streadway/amqp v1.0.0
-	github.com/swaggo/files v1.0.1
-	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.8.12
 	github.com/wleven/wxpay v1.2.9
 	go.mongodb.org/mongo-driver v1.10.2
@@ -104,6 +103,7 @@ require (
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/tools v0.7.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect

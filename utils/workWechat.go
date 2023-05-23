@@ -9,7 +9,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
-	"sync"
+	"strconv"
 	"time"
 )
 
@@ -235,10 +235,10 @@ func GetWechatToken() (result string) {
 	result, err := global.REDIS.Get(ctx, "WeChatAccessToken").Result()
 
 	if err == redis.Nil {
-		zap.L().Error("RedisKey PhoneNumbers does not exist", zap.Error(err))
+		zap.L().Error("RedisKey WeChatAccessToken does not exist", zap.Error(err))
 
 	} else if err != nil {
-		zap.L().Error("RedisKey PhoneNumbers does not exist", zap.Error(err))
+		zap.L().Error("RedisKey WeChatAccessToken does not exist", zap.Error(err))
 	}
 	// 若有缓存直接返回
 	if len(result) > 5 && result != "" {
@@ -503,7 +503,7 @@ func DelService(kfID string, userData []string) {
 }
 
 // GetServiceState 获取会话状态
-func GetServiceState(kfID, userID string) {
+func GetServiceState(kfID, userID string) GetServiceStateStruct {
 	token := GetWechatToken()
 	var ReturnData GetServiceStateStruct
 	bodyData := map[string]interface{}{
@@ -526,41 +526,23 @@ func GetServiceState(kfID, userID string) {
 		zap.L().Error("Json序列化失败！", zap.Error(err))
 	}
 	if ReturnData.ErrCode == 0 {
-		// 更新MongoDB会话状态
-		zap.L().Debug("更新MongoDB数据库：", zap.String("external_userid", userID), zap.Int("ServiceState", ReturnData.ServiceState))
-		if ReturnData.ServiceState == 0 {
-			TransServiceState(kfID, userID, "", 1)
-			go UpdateMongoMessage("workWechat", "userSchedule", userID, ReturnData.ServiceState)
-
-		} else {
-			go UpdateMongoMessage("workWechat", "userSchedule", userID, ReturnData.ServiceState)
+		err = SendQueue("ExternalUseridQueue", userID)
+		if err != nil {
+			zap.L().Error("客户数据写入MQ失败！", zap.Error(err), zap.String("data", userID))
 		}
+
+		// 更新MongoDB会话状态
+		//zap.L().Debug("更新MongoDB数据库：", zap.String("external_userid", userID), zap.Int("ServiceState", ReturnData.ServiceState))
+		//if ReturnData.ServiceState == 0 {
+		//	TransServiceState(kfID, userID, "", 2)
+		//	go UpdateMongoMessage("workWechat", "userSchedule", userID, ReturnData.ServiceState)
+		//
+		//} else {
+		//	go UpdateMongoMessage("workWechat", "userSchedule", userID, ReturnData.ServiceState)
+		//}
 	}
 	zap.L().Info("获取会话状态GetServiceState返回数据：", zap.Any("data", ReturnData))
-}
-
-// UpdateMongoMessage 更新MongoDB数据函数
-func UpdateMongoMessage(dbName, tableName, userID string, State int) {
-	var result MongoDBUserScheduleStruct
-	//collection := global.MONGO.Database("workWechat").Collection("userSchedule")
-	collection := global.MONGO.Database(dbName).Collection(tableName)
-	filter := bson.D{{"userid", userID}}
-	err := collection.FindOne(context.TODO(), filter).Decode(&result)
-	if err != nil {
-		zap.L().Error("查询数据失败", zap.Error(err))
-	}
-	if result.Userid != "" && err == nil {
-		update := bson.M{
-			"$set": bson.M{
-				"serviceState": State,
-			},
-		}
-		updateResult, updateErr := collection.UpdateOne(context.TODO(), filter, update)
-		if err != nil {
-			zap.L().Error("更新数据失败", zap.Error(updateErr))
-		}
-		zap.L().Info("更新数据成功", zap.Any("Matched documents and updated  documents", updateResult.ModifiedCount))
-	}
+	return ReturnData
 }
 
 // SaveSession 将收到的用户信息保存到MongoDB中
@@ -699,80 +681,188 @@ func UpdateMongoRejectCustomerMsgSwitchChange(dbName, tableName, userID, kfID, s
 }
 
 // TransServiceState 变更会话状态
-func TransServiceState(kfID, userID, jdKf string, state int) (ReturnData TransServiceStateStruct) {
+func TransServiceState(kfID, userID string) (ReturnData TransServiceStateStruct) {
 	token := GetWechatToken()
+	ctx := context.Background()
 	bodyData := make(map[string]interface{})
-	if state == 4 || state == 2 || state == 1 {
+	// 取出可用的客服D
+	ServiceUserid := global.REDIS.LPop(context.Background(), "ServiceUseridUpQueue").String()
+	if ServiceUserid == "" {
+		zap.L().Error("当前客服在线队列ServiceUseridUpQueue为空，会话分配暂停中.......")
+		return ReturnData
+	}
+
+	// 分配会话时候，先将客户会话状态改为2并且发送事件消息，并且判断当前是否有可接待的客服，如果有直接分配，若没有则将客户加入新的队列中，下次优先调度
+	// 判断本次取出的客服是否可接待
+	memberTemp := global.REDIS.ZScore(ctx, "ServiceUseridData", ServiceUserid).String()
+	member, _ := strconv.Atoi(memberTemp)
+	if member < 10 {
+		global.REDIS.RPush(ctx, "ServiceUseridUpQueue", ServiceUserid)
+		bodyData = map[string]interface{}{
+			"open_kfid":       kfID,
+			"external_userid": userID,
+			"service_state":   3,
+			"servicer_userid": ServiceUserid,
+		}
+		body, err := json.Marshal(bodyData)
+		if err != nil {
+			zap.L().Error("Json序列化失败！", zap.Error(err))
+		}
+		tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/service_state/trans?access_token="+token, "POST", string(body), "")
+		if err != nil {
+			zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+		}
+		err = json.Unmarshal(tempData, &ReturnData)
+		if err != nil {
+			zap.L().Error("Json序列化失败！", zap.Error(err))
+		}
+		if ReturnData.MsgCode != "" {
+			go SendMsgOnEvent(ReturnData.MsgCode, "尊敬的客户您好，系统提示您已进入人工会话，欢迎您的来访~")
+		}
+		// 会话分配成功，记录哪个客户分配给哪个客服，后期做会话超时
+		if ReturnData.Errcode == 0 {
+			ServiceUserHistoryMongo := global.MONGO.Database("workWechat").Collection("ServiceUserHistory")
+			data := ServiceUserHistoryStruct{
+				ServiceUserid:  ServiceUserid,
+				OpenKfId:       kfID,
+				ExternalUserid: userID,
+				ServiceStatus:  1,
+				ServiceData:    time.Now().Format("2006-01-02 15:04:05"),
+			}
+
+			insertResult, err := ServiceUserHistoryMongo.InsertOne(context.TODO(), data)
+			if err != nil {
+				zap.L().Error("插入数据失败", zap.Error(err))
+			}
+			zap.L().Info("插入数据成功", zap.Any("data", insertResult.InsertedID))
+		}
+		return ReturnData
+	} else {
+		// 循环指定次数 获取有序集合的成员数
+		numberTemp := global.REDIS.ZCard(ctx, "ServiceUseridData").String() // 获取集合元素个数
+		number, _ := strconv.Atoi(numberTemp)
+		for i := 0; i <= number; i++ {
+			// 循环时将上次的拿出的客服重新放入队列中，避免队列为空
+			global.REDIS.RPush(ctx, "ServiceUseridUpQueue", ServiceUserid)
+			ServiceUserid = global.REDIS.LPop(ctx, "ServiceUseridUpQueue").String()
+			if ServiceUserid == "" {
+				zap.L().Error("当前客服在线队列ServiceUseridUpQueue为空，会话分配暂停中.......")
+				return ReturnData
+			}
+
+			memberTemp = global.REDIS.ZScore(context.Background(), "ServiceUseridData", ServiceUserid).String()
+			member, _ = strconv.Atoi(memberTemp)
+			if member < 10 {
+				global.REDIS.RPush(ctx, "ServiceUseridUpQueue", ServiceUserid)
+				bodyData = map[string]interface{}{
+					"open_kfid":       kfID,
+					"external_userid": userID,
+					"service_state":   3,
+					"servicer_userid": ServiceUserid,
+				}
+
+				body, err := json.Marshal(bodyData)
+				if err != nil {
+					zap.L().Error("Json序列化失败！", zap.Error(err))
+				}
+
+				tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/service_state/trans?access_token="+token, "POST", string(body), "")
+				if err != nil {
+					zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+				}
+				err = json.Unmarshal(tempData, &ReturnData)
+				if err != nil {
+					zap.L().Error("Json序列化失败！", zap.Error(err))
+				}
+
+				if ReturnData.MsgCode != "" {
+					go SendMsgOnEvent(ReturnData.MsgCode, "尊敬的客户您好，系统提示您已进入人工会话，欢迎您的来访~")
+				} else {
+					go SendMsgData(userID, kfID, "尊敬的客户您好，系统提示您已进入人工会话，欢迎您的来访~")
+				}
+
+				return ReturnData
+			}
+		}
+		// 若五次循环都没有成功分配，则证明当前客服繁忙，将客户放入接待池中
 		bodyData = map[string]interface{}{
 			// 结束会话不用分配客服ID
 			"open_kfid":       kfID,
 			"external_userid": userID,
-			"service_state":   state,
+			"service_state":   2,
 		}
-	} else {
-		bodyData = map[string]interface{}{
-			"open_kfid":       kfID,
-			"external_userid": userID,
-			"service_state":   state,
-			"servicer_userid": jdKf,
+
+		body, err := json.Marshal(bodyData)
+		if err != nil {
+			zap.L().Error("Json序列化失败！", zap.Error(err))
 		}
-	}
 
-	body, err := json.Marshal(bodyData)
-	if err != nil {
-		zap.L().Error("Json序列化失败！", zap.Error(err))
-	}
-
-	tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/service_state/trans?access_token="+token, "POST", string(body), "")
-	if err != nil {
-		zap.L().Error("HTTP请求发送失败！", zap.Error(err))
-	}
-	err = json.Unmarshal(tempData, &ReturnData)
-	if err != nil {
-		zap.L().Error("Json序列化失败！", zap.Error(err))
-	}
-
-	if state == 1 || state == 2 {
+		tempData, err := HttpClient("https://qyapi.weixin.qq.com/cgi-bin/kf/service_state/trans?access_token="+token, "POST", string(body), "")
+		if err != nil {
+			zap.L().Error("HTTP请求发送失败！", zap.Error(err))
+		}
+		err = json.Unmarshal(tempData, &ReturnData)
+		if err != nil {
+			zap.L().Error("Json序列化失败！", zap.Error(err))
+		}
+		// 将客户放入优先接待队列
+		global.REDIS.RPush(ctx, "ExternalUseridUpQueue", userID)
+		// 获取队列长度，并且将排队信息返回给客户
+		tempNumber := global.REDIS.LLen(ctx, "ExternalUseridUpQueue").String()
+		messageData := ""
+		if tempNumber == "0" {
+			messageData = "尊敬的客户您好, 当前客服坐席繁忙, 您正在排队中, 预计还有1人, 请您稍后......"
+		} else {
+			messageData = "尊敬的客户您好, 当前客服坐席繁忙, 您正在排队中, 预计还有" + tempNumber + "人, 请您稍后......"
+		}
 		if ReturnData.MsgCode != "" {
-			go SendMsgOnEvent(ReturnData.MsgCode, "正在排队中，预计还需要5分钟~")
+			go SendMsgOnEvent(ReturnData.MsgCode, messageData)
+		} else {
+			go SendMsgData(userID, kfID, messageData)
 		}
-
-		go SendMsgData(userID, kfID, "这是普通消息，您正在排队中，预计还需要5分钟~")
-
-	} else if state == 3 {
-		if ReturnData.MsgCode != "" {
-			go SendMsgOnEvent(ReturnData.MsgCode, "你已进入人工会话")
-		}
-		go SendMsgData(userID, kfID, "这是普通消息2，您正在排队中，预计还需要5分钟~")
 	}
-
 	return ReturnData
+}
+
+// InitWorkWechatData 初始化企业微信--微信客服需要的数据, 仅在项目运行的时候执行一次
+func InitWorkWechatData(kfID string) {
+	ReturnData := GetServiceList(kfID)
+	if ReturnData.ErrCode == 0 || ReturnData.ErrMsg == "ok" {
+		for _, v := range ReturnData.ServiceList {
+			// 保存客服接待人员数量
+			global.REDIS.ZAdd(context.Background(), "ServiceUseridData", &redis.Z{
+				Score:  0,
+				Member: v.Userid,
+			})
+			if v.Status == 0 {
+				// 将客服信息放入接待中队列
+				global.REDIS.RPush(context.Background(), "ServiceUseridUpQueue", v.Userid)
+			}
+		}
+	}
+
+	go func() {
+		for {
+			time.Sleep(time.Second * 3)
+			ControlMessage(kfID)
+		}
+	}()
 }
 
 // GetMessage 同步消息
 func GetMessage(kfID, token string) (ReturnData GetMessageStruct) {
 	worktoken := GetWechatToken()
-
 	// Redis加缓存
 	ctx := context.Background()
 	redisData := GetRedisKey(ctx, "syncMsgNextCursor")
 	bodyData := make(map[string]interface{})
-	if redisData == "" {
-		bodyData = map[string]interface{}{
-			"token":        token,
-			"limit":        1000,
-			"voice_format": 0,
-			"open_kfid":    kfID,
-		}
-	} else {
-		bodyData = map[string]interface{}{
-			"cursor":       redisData,
-			"token":        token,
-			"limit":        1000,
-			"voice_format": 0,
-			"open_kfid":    kfID,
-		}
+	if redisData != "" {
+		bodyData["cursor"] = redisData
 	}
+	bodyData["token"] = token
+	bodyData["open_kfid"] = kfID
+	bodyData["voice_format"] = 0
+	bodyData["limit"] = 1000
 
 	body, err := json.Marshal(bodyData)
 	if err != nil {
@@ -788,6 +878,7 @@ func GetMessage(kfID, token string) (ReturnData GetMessageStruct) {
 	if err != nil {
 		zap.L().Error("Json序列化失败！", zap.Error(err))
 	}
+
 	err = global.REDIS.Set(ctx, "syncMsgNextCursor", ReturnData.NextCursor, 0).Err()
 
 	if err != nil {
@@ -795,120 +886,74 @@ func GetMessage(kfID, token string) (ReturnData GetMessageStruct) {
 	}
 
 	// MongoDB 调度用户数据
-	collection := global.MONGO.Database("workWechat").Collection("userSchedule")
+	//collection := global.MONGO.Database("workWechat").Collection("userSchedule")
 
 	// 将同步到的数据全部缓存到MongoDB中
 	for _, v := range ReturnData.MsgList {
-		var result MongoDBUserScheduleStruct
-		filter := bson.D{{"userid", v.ExternalUserid}}
-		err = collection.FindOne(context.TODO(), filter).Decode(&result)
-		if err != nil {
-			zap.L().Error("查询数据失败", zap.Error(err))
-		}
-		if result.Userid != "" && err == nil {
-			update := bson.M{
-				"$set": bson.M{
-					"sendTime":       v.SendTime,
-					"msgType":        v.MsgType,
-					"openKfId":       v.OpenKfId,
-					"externalUserid": v.ExternalUserid,
-				},
-			}
-
-			updateResult, err := collection.UpdateOne(context.TODO(), filter, update)
-			if err != nil {
-				zap.L().Error("更新数据失败", zap.Error(err))
-			}
-
-			zap.L().Info("更新数据成功", zap.Any("Matched documents and updated  documents", updateResult.ModifiedCount))
-
-		} else {
-			if v.ExternalUserid != "" {
-				s1 := MongoDBUserScheduleStruct{
-					v.ExternalUserid,
-					0,
-					v.SendTime,
-					v.MsgType,
-					v.OpenKfId,
-					v.ExternalUserid,
-				}
-				insertResult, err := collection.InsertOne(context.TODO(), s1)
-				if err != nil {
-					zap.L().Error("插入数据失败", zap.Error(err))
-				}
-
-				zap.L().Info("插入数据成功", zap.Any("data", insertResult.InsertedID))
-			}
+		// Redis中缓存正在会话中的客户ID KEY InConversationExternalUserid []string Redis Type List
+		// 此处做判定，如果是正在会话中的则不再往队列中丢，筛选完成以后再次判断会话状态是否为已结束或未开始，状态等于4的剔除，其余的丢进MQ队列中
+		// MQ中保存未调度会话ID的队列名称为ExternalUseridQueue
+		if FindList(global.REDIS.LRange(ctx, "InConversationExternalUserid", 0, -1).Val(), v.ExternalUserid) == false {
+			GetServiceState(v.OpenKfId, v.ExternalUserid)
 		}
 
-		// 将解析到的聊天记录保存一份
+		//将解析到的聊天记录保存一份
 		if v.Origin == 3 {
-			// 微信客户发送的消息
+			// 保存微信客户发送的消息
 			go SaveSession("workWechat", "userMessageSession", v.ExternalUserid, v.OpenKfId, v.Text.Content, v.MsgType, v.ExternalUserid, v.MsgId, v.SendTime)
 		} else if v.Origin == 5 {
 			// 接待人员在企业微信客户端发送的消息
 			go SaveSession("workWechat", "userMessageSession", v.OpenKfId, v.ExternalUserid, v.Text.Content, v.MsgType, v.ExternalUserid, v.MsgId, v.SendTime)
 		} else if v.Origin == 4 && v.MsgType == "event" {
-			zap.L().Error("v", zap.Any("v", v))
-			zap.L().Error("v.Event", zap.Any("v.event", v.Event))
+			zap.L().Error("接到企业微信推送事件消息，v.Event", zap.Any("v.event", v.Event))
 			// 系统推送的事件消息
 			switch v.Event.EventType {
 			case "enter_session":
-				// 用户进入会话事件, ，并将用户信息放入调度队列中
-				if v.Event.WelcomeCode != "" {
-					// 将数据写入MongoDB
-					if v.ExternalUserid != "" {
-						s1 := MongoDBUserScheduleStruct{
-							v.ExternalUserid,
-							0,
-							v.SendTime,
-							v.MsgType,
-							v.OpenKfId,
-							v.ExternalUserid,
-						}
-						insertResult, err := collection.InsertOne(context.TODO(), s1)
-						if err != nil {
-							zap.L().Error("插入数据失败", zap.Error(err))
-						}
-						zap.L().Info("插入数据成功", zap.Any("data", insertResult.InsertedID))
-					}
-					// 发送欢迎语以及排队人数
-					fmt.Println("enter_session, 用户进入会话")
-					go SendMsgOnEvent(v.Event.WelcomeCode, "哈罗，尊敬的客户您好，很高兴为您服务，请问有什么可以帮您？")
-					go SendMsgData(v.ExternalUserid, v.OpenKfId, "当前排队人数为10人, 请耐心等待~")
+				// 用户进入会话事件，将用户放入正在接待的客户队列，队列名称 InConversationExternalUserid
+				if FindList(global.REDIS.LRange(ctx, "InConversationExternalUserid", 0, -1).Val(), v.Event.ExternalUserid) == false {
+					global.REDIS.RPush(ctx, "InConversationExternalUserid", v.Event.ExternalUserid)
 				}
+
+				if v.Event.WelcomeCode != "" {
+					// 条件为：用户在过去48小时里未收过欢迎语，且未向客服发过消息），会返回该字段。
+					go SendMsgOnEvent(v.Event.WelcomeCode, "哈罗，尊敬的客户您好，很高兴为您服务，请问有什么可以帮您？")
+				}
+
 			case "msg_send_fail":
 				// 消息发送失败事件, 记录MongoDB
-				FailTypeMessage := ""
-				switch v.Event.FailType {
-				case 0:
-					FailTypeMessage = "未知原因"
-				case 1:
-					FailTypeMessage = "客服帐号已删除"
-				case 2:
-					FailTypeMessage = "应用已关闭"
-				case 4:
-					FailTypeMessage = "会话已过期，超过48小时"
-				case 5:
-					FailTypeMessage = "会话已关闭"
-				case 6:
-					FailTypeMessage = "超过5条限制"
-				case 7:
-					FailTypeMessage = "未绑定视频号"
-				case 8:
-					FailTypeMessage = "主体未验证"
-				case 9:
-					FailTypeMessage = "未绑定视频号且主体未验证"
-				case 10:
-					FailTypeMessage = "用户拒收"
-				default:
-					FailTypeMessage = ""
+				FailTypeMessageMap := map[int]string{
+					0:  "未知原因",
+					1:  "客服帐号已删除",
+					2:  "应用已关闭",
+					4:  "会话已过期，超过48小时",
+					5:  "会话已关闭",
+					6:  "超过5条限制",
+					7:  "未绑定视频号",
+					8:  "主体未验证",
+					9:  "未绑定视频号且主体未验证",
+					10: "用户拒收",
 				}
-				zap.L().Error("接收到微信事件发送消息失败", zap.String("fail_type", FailTypeMessage))
-				go UpdateMongoMsgSendFail("workWechat", "userMsgSendFail", v.Event.ExternalUserid, v.Event.OpenKfid, v.Event.FailMsgId, FailTypeMessage)
+				zap.L().Error("接收到微信事件发送消息失败", zap.String("fail_type", FailTypeMessageMap[v.Event.FailType]))
+				go UpdateMongoMsgSendFail("workWechat", "userMsgSendFail", v.Event.ExternalUserid, v.Event.OpenKfid, v.Event.FailMsgId, FailTypeMessageMap[v.Event.FailType])
 
 			case "servicer_status_change":
-				// 接待人员接待状态变更事件 如从接待中变更为停止接待
+				// 1-接待中 2-停止接待
+				// 接待人员接待状态变更事件 如从接待中变更为停止接待, 此处判定，接待人员是否合法，若状态为在线则将接待人员放入Redis队列中，若离线则从队列中删除
+				if v.Event.Status == 1 {
+					// 将客服加入接待队列尾部 ServiceUseridUpQueue
+					if v.Event.ServiceUserid == "e0c48f2ff5b73bc696c2aa1a0f666f3e" {
+						global.REDIS.RPush(ctx, "ServiceUseridUpQueue", v.Event.ServiceUserid) // 正常接待
+					} else {
+						global.REDIS.LPushX(ctx, "ServiceUseridUpQueue", v.Event.ServiceUserid) // 谁去洗手间回来优先接待
+					}
+
+				} else if v.Event.Status == 2 {
+					// 先判断客服是否存在于队列中，若存在则将客服移除接待队列，不再进行会话分配
+					if FindList(global.REDIS.LRange(ctx, "ServiceUseridUpQueue", 0, -1).Val(), v.Event.ServiceUserid) {
+						global.REDIS.LRem(ctx, "ServiceUseridUpQueue", 0, v.Event.ServiceUserid)
+					}
+				}
+				// 记录接待人员接待状态变更
 				go UpdateMongoServiceStatusChange("workWechat", "userServiceStatusChange", v.Event.ServiceUserid, v.Event.OpenKfid, v.Event.Status)
 
 			case "session_status_change":
@@ -919,24 +964,39 @@ func GetMessage(kfID, token string) (ReturnData GetMessageStruct) {
 						3-结束会话
 						4-重新接入已结束/已转接会话
 				*/
-				fmt.Println("session_status_change, 会话状态变更")
+
 				switch v.Event.ChangeType {
 				case 1:
+					// 从接待池接入会话时，将客户ID保存一份到正在会话的客户队列 队列名称 InConversationExternalUserid
+					if FindList(global.REDIS.LRange(ctx, "InConversationExternalUserid", 0, -1).Val(), v.Event.ExternalUserid) == false {
+						global.REDIS.RPush(ctx, "InConversationExternalUserid", v.Event.ExternalUserid)
+					}
 
+					global.REDIS.RPush(ctx, "InConversationExternalUserid", v.Event.ExternalUserid)
 					if v.Event.MsgCode != "" {
-						go SendMsgOnEvent(v.Event.WelcomeCode, "提供设备号，姓名，手机号")
+						go SendMsgOnEvent(v.Event.WelcomeCode, "请提供设备号，姓名，手机号")
 					}
 
 				case 2:
+					// TODO 记录转接会话操作
 				case 3:
-					fmt.Println("本次会话已结束")
-					// TODO 客服若主动结束会话，此处将减少客服消息队列中的人数，客户进线时记录客户进线的时间，若超时则自动结束会话
+					// 当客户会话结束时，从正在会话的客户队列中删除记录 队列名称 InConversationExternalUserid
+					if FindList(global.REDIS.LRange(ctx, "InConversationExternalUserid", 0, -1).Val(), v.Event.ExternalUserid) {
+						global.REDIS.LRem(ctx, "InConversationExternalUserid", 0, v.Event.ExternalUserid)
+					}
+
+					zap.L().Debug("本次会话已结束", zap.String("ExternalUserid", v.Event.ExternalUserid))
+					// TODO 超时自动结束会话
+					err = global.REDIS.ZIncrBy(ctx, "ServiceUseridData", -1, v.Event.OldServiceUserid).Err()
+					if err != nil {
+						zap.L().Error("减少客服接待人数失败，请排查原因~", zap.Error(err))
+					}
 
 					if v.Event.MsgCode != "" {
-						go SendMsgOnEvent(v.Event.WelcomeCode, "评价发送")
+						go SendMsgOnEvent(v.Event.WelcomeCode, "本次会话已结束，感谢您的来访~")
 					}
 				case 4:
-
+					zap.L().Info("重新接入已结束/已转接会话", zap.Any("data", v))
 				default:
 
 				}
@@ -1018,140 +1078,51 @@ func SendMsgData(userID, kfID, message string) (ReturnData SendMsgOnEventStruct)
 	return ReturnData
 }
 
-// 客服结构体
-type CustomerService struct {
-	ID       int        // 客服ID
-	IsPaused bool       // 是否暂停接入客户
-	IsBusy   bool       // 是否正在处理客户
-	Lock     sync.Mutex // 锁，控制并发处理客户
-}
-
-// 客户结构体
-type Customer struct {
-	ID int // 客户ID
-}
-
-// 客服队列
-type CustomerServiceQueue struct {
-	Services []*CustomerService // 客服队列
-}
-
-// 客户咨询队列
-type CustomerQueue struct {
-	Customers []*Customer // 客户队列
-}
-
-// Scheduler 调度器结构体
-type Scheduler struct {
-	ServiceQueue  *CustomerServiceQueue // 客服队列
-	CustomerQueue *CustomerQueue        // 客户咨询队列
-	Lock          sync.Mutex            // 锁，控制并发访问调度器
-}
-
-// NewCustomerServiceQueue 初始化客服队列
-func NewCustomerServiceQueue() *CustomerServiceQueue {
-	return &CustomerServiceQueue{
-		Services: make([]*CustomerService, 0),
-	}
-}
-
-// NewCustomerQueue 初始化客户咨询队列
-func NewCustomerQueue() *CustomerQueue {
-	return &CustomerQueue{
-		Customers: make([]*Customer, 0),
-	}
-}
-
-// NewScheduler 初始化调度器
-func NewScheduler(serviceQueue *CustomerServiceQueue, customerQueue *CustomerQueue) *Scheduler {
-	return &Scheduler{
-		ServiceQueue:  serviceQueue,
-		CustomerQueue: customerQueue,
-	}
-}
-
-// AddService 将客服加入队列
-func (q *CustomerServiceQueue) AddService(service *CustomerService) {
-	q.Services = append(q.Services, service)
-}
-
-// AddCustomer 将客户加入队列
-func (q *CustomerQueue) AddCustomer(customer *Customer) {
-	q.Customers = append(q.Customers, customer)
-}
-
-// AllocateCustomerToService 分配客户给客服
-func (s *Scheduler) AllocateCustomerToService(service *CustomerService, customer *Customer) {
-	// 尝试获取锁
-	service.Lock.Lock()
-	defer service.Lock.Unlock()
-
-	// 标记客服正在处理客户
-	service.IsBusy = true
-
-	// 处理客户
-	// ...
-
-	// 标记客服处理完客户
-	service.IsBusy = false
-}
-
-// Run 调度器主循环
-func (s *Scheduler) Run() {
-	for {
-		// 获取锁，避免并发访问客服队列和客户咨询队列
-		s.Lock.Lock()
-
-		// 检查客服队列是否有客服
-		if len(s.ServiceQueue.Services) > 0 {
-			// 遍历客服队列
-			for _, service := range s.ServiceQueue.Services {
-				// 如果客服正在处理客户，则跳过
-				if service.IsBusy {
-					continue
-				}
-
-				// 如果客服设置了暂停接入客户，则跳过
-				if service.IsPaused {
-					continue
-				}
-
-				// 检查客户咨询队列是否有客户
-				if len(s.CustomerQueue.Customers) > 0 {
-					// 取出客户
-					customer := s.CustomerQueue.Customers[0]
-					s.CustomerQueue.Customers = s.CustomerQueue.Customers[1:]
-
-					// 分配客户给客服
-					go s.AllocateCustomerToService(service, customer)
-				}
+// ControlMessage 将客户信息调度给客服
+func ControlMessage(OpenKfId string) {
+	/*
+		OpenKfId： 客服账号ID
+		kfID：     客服ID
+		userID:    客户ID
+	*/
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	now := time.Now().In(loc)
+	start, _ := time.ParseInLocation("2006-01-02 15:04:05", now.Format("2006-01-02")+" 09:00:00", loc)
+	end, _ := time.ParseInLocation("2006-01-02 15:04:05", now.Format("2006-01-02")+" 21:30:00", loc)
+	ExternalUserid := ""
+	if now.After(start) && now.Before(end) {
+		/*
+			将当前客服正在接待的客户放入MongoDB
+			{
+				ServiceUserid string `json:"servicer_userid"`			        // 客服ID
+				OpenKfId       string `json:"open_kfid,omitempty"`			    // 客服账号
+				ExternalUseridList string `json:"external_userid,omitempty"`    // 会话客户
+				ServiceStatus  int `json:"servicer_userid"`
 			}
+		*/
+
+		// 将客户分配给客服
+		// TODO 判断接待池中是否有客户，若有则优先分配 ExternalUseridUpQueue
+		ExternalUserid = global.REDIS.LPop(context.Background(), "ExternalUseridUpQueue").String()
+
+		if ExternalUserid == "" {
+			// 优先队列没有人的时候，去MQ中取一个 ExternalUseridQueue
+			queue, err := PullQueue("ExternalUseridQueue")
+			if err != nil {
+				zap.L().Error("从ExternalUseridQueue队列中取值失败！", zap.Error(err))
+			}
+			ExternalUserid = string(queue)
 		}
+		TransServiceStateData := TransServiceState(OpenKfId, ExternalUserid)
+		zap.L().Info("分配会话状态返回数据：", zap.Any("data", TransServiceStateData))
 
-		// 释放锁
-		s.Lock.Unlock()
-
-		// 等待一段时间后再次执行
-		time.Sleep(1 * time.Second)
+	} else {
+		// 推送客服不在线的消息
+		sendDataReturn := SendMsgData(ExternalUserid, OpenKfId, "您好，非常感谢您的咨询~ \n"+
+			"很抱歉告知您，此时是我们的非工作时间，我们的客服人员已下班。如果您有任何问题或需求，请您在工作时间(09:00~21:30)再次联系我们，我们将竭诚为您提供满意的服务。感谢您的理解和支持，祝您生活愉快！")
+		zap.L().Info("发送普通消息返回数据：", zap.Any("data", sendDataReturn))
+		// 将会话状态重置为4
+		TransServiceStateData := TransServiceState(OpenKfId, ExternalUserid)
+		zap.L().Info("分配会话状态返回数据：", zap.Any("data", TransServiceStateData))
 	}
-}
-
-func RunningQuery() {
-	// 初始化客服队列和客户咨询队列
-	serviceQueue := NewCustomerServiceQueue()
-	customerQueue := NewCustomerQueue()
-
-	// 创建客服和客户，并加入队列
-	service1 := &CustomerService{ID: 1}
-	service2 := &CustomerService{ID: 2}
-	customer1 := &Customer{ID: 1}
-	customer2 := &Customer{ID: 2}
-	serviceQueue.AddService(service1)
-	serviceQueue.AddService(service2)
-	customerQueue.AddCustomer(customer1)
-	customerQueue.AddCustomer(customer2)
-
-	// 创建调度器并运行
-	scheduler := NewScheduler(serviceQueue, customerQueue)
-	scheduler.Run()
 }
