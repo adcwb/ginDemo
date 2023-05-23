@@ -84,7 +84,7 @@ func main() {
 	initialization.InitRabbitMQ(ENV)
 
 	// 初始化企业微信所需要的参数
-	utils.InitWorkWechatData(global.CONFIG.GetString(ENV + ".WechatOpenKfId"))
+	utils.InitWorkWechatData(global.CONFIG.GetString(ENV + ".WorkWechatOpenKfId"))
 
 	// 初始化阿里云OSS存储
 	//initialization.InitAliYunOss(global.CONFIG.GetString("RunConfig"))

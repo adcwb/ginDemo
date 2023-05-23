@@ -1112,10 +1112,9 @@ func ControlMessage(OpenKfId string) {
 				zap.L().Error("从ExternalUseridQueue队列中取值失败！", zap.Error(err))
 			}
 			ExternalUserid = string(queue)
+			TransServiceStateData := TransServiceState(OpenKfId, ExternalUserid)
+			zap.L().Info("分配会话状态返回数据：", zap.Any("data", TransServiceStateData))
 		}
-		TransServiceStateData := TransServiceState(OpenKfId, ExternalUserid)
-		zap.L().Info("分配会话状态返回数据：", zap.Any("data", TransServiceStateData))
-
 	} else {
 		// 推送客服不在线的消息
 		sendDataReturn := SendMsgData(ExternalUserid, OpenKfId, "您好，非常感谢您的咨询~ \n"+
