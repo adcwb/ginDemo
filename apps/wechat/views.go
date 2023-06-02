@@ -369,43 +369,6 @@ func PostCallbackWechat(c *gin.Context) {
 	// 同步消息
 	getMessageData := utils.GetMessage(msgContent.OpenKfId, msgContent.Token)
 	zap.L().Info("同步消息状态返回数据：", zap.Any("data", getMessageData))
-
-	// 分配会话, 从MongoDB中获取所有的ExternalUserid
-	// 版本一，从MongoDB中读取所有数据，然后迭代循环
-	//collection := global.MONGO.Database("workWechat").Collection("userSchedule")
-	//
-	//var result []string
-	//filter := bson.D{}
-	//cur, err := collection.Find(context.TODO(), filter)
-	//if err != nil {
-	//	zap.L().Error("查询数据失败", zap.Error(err))
-	//}
-	//
-	//for cur.Next(context.TODO()) {
-	//	// 创建一个值，将单个文档解码为该值
-	//	var elem utils.MongoDBUserScheduleStruct
-	//	err := cur.Decode(&elem)
-	//	if err != nil {
-	//		zap.L().Error("读取文件失败", zap.Error(err))
-	//	}
-	//	go utils.GetServiceState(msgContent.OpenKfId, elem.ExternalUserid)
-	//	//result = append(result, elem.ExternalUserid)
-	//	// 判断会话
-	//	if elem.ServiceState != 4 {
-	//		result = append(result, elem.ExternalUserid)
-	//	}
-	//}
-	//
-	//if err := cur.Err(); err != nil {
-	//	zap.L().Error("读取文件失败", zap.Error(err))
-	//}
-
-	// 版本二
-
-	// 分配会话
-
-	//utils.ControlMessage()
-
 	c.JSON(http.StatusOK, "SUCCESS")
 }
 
