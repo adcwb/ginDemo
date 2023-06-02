@@ -707,7 +707,8 @@ func TransServiceState(kfID, userID string) (ReturnData TransServiceStateStruct)
 		zap.L().Error("Redis ZScore ServiceUseridData Error! ", zap.Error(err))
 	}
 	fmt.Println("member 本次取出的客服接待的人数", member)
-	if member < 1 {
+	// 最大接待十个人
+	if member < 9 {
 		// 将取到的接待人员重新放入队列中
 		global.REDIS.RPush(ctx, "ServiceUseridUpQueue", ServiceUserid)
 		bodyData = map[string]interface{}{
