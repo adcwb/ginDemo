@@ -400,3 +400,8 @@ func GetQueueMessage(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, string(queue))
 }
+
+func RunningJob(c *gin.Context) {
+	utils.TimeOutCheck()
+	c.JSON(http.StatusOK, "OK")
+}

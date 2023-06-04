@@ -18,6 +18,7 @@ func Routers(e *gin.Engine) {
 		chat.GET("/GetKfList", GetKfList)
 		chat.POST("/SendMessageQueue", SendMessageQueue)
 		chat.GET("/GetQueueMessage", GetQueueMessage)
+		chat.GET("/runningJob", RunningJob)
 
 		chat.GET("/Callback", GetCallbackWechat)
 		chat.POST("/Callback", PostCallbackWechat)
