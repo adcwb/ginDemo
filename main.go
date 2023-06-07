@@ -12,11 +12,13 @@ import (
 	"ginDemo/initialization"
 	"ginDemo/middleware"
 	"ginDemo/utils"
+	"github.com/go-co-op/gocron"
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 )
 
 //	@title			ginDemo
@@ -90,10 +92,16 @@ func main() {
 	//initialization.InitAliYunOss(global.CONFIG.GetString("RunConfig"))
 
 	// 初始化定时任务
-	//global.JobS = gocron.NewScheduler(time.UTC)
+	global.JobS = gocron.NewScheduler(time.UTC)
+
+	// 运行定时任务，每十分钟执行一次
+	_, err = global.JobS.Cron("* */1 * * *").Do(utils.TimeOutCheck)
+	if err != nil {
+		zap.L().Error("调度任务报错！", zap.Error(err))
+	}
 
 	// 运行调度任务，共有两种方式
-	//global.JobS.StartAsync() // 异步启动调度器
+	global.JobS.StartAsync() // 异步启动调度器
 	//global.JobS.StartBlocking() // 启动调度器并阻塞当前执行路径
 
 	// 初始化路由

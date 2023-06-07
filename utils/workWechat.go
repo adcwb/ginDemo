@@ -708,7 +708,7 @@ func TransServiceState(kfID, userID string) (ReturnData TransServiceStateStruct)
 	}
 	fmt.Println("member 本次取出的客服接待的人数", member)
 	// 最大接待十个人
-	if member < 1 {
+	if member < 9 {
 		// 将取到的接待人员重新放入队列中
 		global.REDIS.RPush(ctx, "ServiceUseridUpQueue", ServiceUserid)
 		bodyData = map[string]interface{}{
@@ -866,6 +866,7 @@ func TransServiceState(kfID, userID string) (ReturnData TransServiceStateStruct)
 
 // TimeOutCheck 超时检测
 func TimeOutCheck() {
+	zap.L().Info("TimeOutCheck超时检测函数开始运行！", zap.String("date", time.Now().Format("2006-01-02 15:04:05")))
 	// 检测MongoDB中的数据，判断是否超时，超时则把会话状态改为4，并从数据库中移除数据 ServiceUserHistoryStruct
 	ServiceUserHistoryMongo := global.MONGO.Database("workWechat").Collection("ServiceUserHistory")
 	// 取出所有的数据，判断是否会话结束，若未结束则查看时间是否超过五分钟，超时直接发送信息提醒，并结束会话
@@ -954,7 +955,9 @@ func TimeOutCheck() {
 	if err != nil {
 		zap.L().Error("关闭会话失败！", zap.Error(err))
 	}
-
+	defer func() {
+		zap.L().Info("TimeOutCheck超时检测函数运行结束，函数已经退出！", zap.String("date", time.Now().Format("2006-01-02 15:04:05")))
+	}()
 	// TODO 有一些异常会话的客户，怎么处理
 }
 
@@ -980,7 +983,6 @@ func InitWorkWechatData(kfID string) {
 		for {
 			time.Sleep(time.Second * 3)
 			fmt.Println("将客户信息调度给客服进程正在执行中......")
-			zap.L().Debug("将客户信息调度给客服进程正在执行中......")
 			ControlMessage(kfID)
 		}
 	}()

@@ -402,6 +402,6 @@ func GetQueueMessage(c *gin.Context) {
 }
 
 func RunningJob(c *gin.Context) {
-	utils.TimeOutCheck()
+	//utils.TimeOutCheck()
 	c.JSON(http.StatusOK, "OK")
 }
