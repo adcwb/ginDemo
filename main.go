@@ -11,14 +11,12 @@ import (
 	"ginDemo/global"
 	"ginDemo/initialization"
 	"ginDemo/middleware"
-	"ginDemo/utils"
-	"github.com/go-co-op/gocron"
+	_ "github.com/apache/skywalking-go"
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
-	"time"
 )
 
 //	@title			ginDemo
@@ -62,51 +60,51 @@ func main() {
 	}
 	var err error
 	// 初始化数据库
-	//global.DB, _ = initialization.InitMySqlClient(global.CONFIG.GetString("RunConfig"))
+	// global.DB, _ = initialization.InitMySqlClient(global.CONFIG.GetString("RunConfig"))
 
 	// 数据迁移
-	//err := global.DB.AutoMigrate(
+	// err := global.DB.AutoMigrate(
 	//	&users.User{},
 	//	&pays.PayConfigData{},
 	//	&pays.PayData{},
-	//)
-	//if err != nil {
+	// )
+	// if err != nil {
 	//	zap.L().Error("数据库自动迁移失败！", zap.Error(err))
-	//}
+	// }
 	// 初始化MongoDB数据库
-	initialization.InitMongoDBClient(ENV)
+	// initialization.InitMongoDBClient(ENV)
 
 	// 初始化Redis数据库
-	initialization.InitRedisClient(ENV)
+	// initialization.InitRedisClient(ENV)
 
 	// 初始化InfluxDB数据库
-	//initialization.InitInfluxDB(global.CONFIG.GetString("RunConfig"))
+	// initialization.InitInfluxDB(global.CONFIG.GetString("RunConfig"))
 
 	// 初始化RabbitMQ消息队列
-	initialization.InitRabbitMQ(ENV)
+	// initialization.InitRabbitMQ(ENV)
 
 	// 初始化企业微信所需要的参数
-	utils.InitWorkWechatData(global.CONFIG.GetString(ENV + ".WorkWechatOpenKfId"))
+	// utils.InitWorkWechatData(global.CONFIG.GetString(ENV + ".WorkWechatOpenKfId"))
 
 	// 初始化阿里云OSS存储
-	//initialization.InitAliYunOss(global.CONFIG.GetString("RunConfig"))
+	// initialization.InitAliYunOss(global.CONFIG.GetString("RunConfig"))
 
 	// 初始化定时任务
-	global.JobS = gocron.NewScheduler(time.UTC)
+	// global.JobS = gocron.NewScheduler(time.UTC)
 
 	// 运行定时任务，每十分钟执行一次
-	_, err = global.JobS.Cron("* */1 * * *").Do(utils.TimeOutCheck)
-	if err != nil {
-		zap.L().Error("调度任务报错！", zap.Error(err))
-	}
+	// _, err = global.JobS.Cron("* */1 * * *").Do(utils.TimeOutCheck)
+	// if err != nil {
+	// 	zap.L().Error("调度任务报错！", zap.Error(err))
+	// }
 
 	// 运行调度任务，共有两种方式
-	global.JobS.StartAsync() // 异步启动调度器
-	//global.JobS.StartBlocking() // 启动调度器并阻塞当前执行路径
+	// global.JobS.StartAsync() // 异步启动调度器
+	// global.JobS.StartBlocking() // 启动调度器并阻塞当前执行路径
 
 	// 初始化路由
 	r := apps.Init(ENV)
-	//initialization.InitSocketIO()
+	// initialization.InitSocketIO()
 
 	if global.CONFIG.GetBool(ENV + ".RunningTLS") {
 		// 启用https
@@ -124,11 +122,11 @@ func main() {
 
 	// 接收退出的信号，并做处理
 	q := make(chan os.Signal)
-	//接收ctrl + c ，kill(排除 kill -9)
+	// 接收ctrl + c ，kill(排除 kill -9)
 	signal.Notify(q, syscall.SIGINT, syscall.SIGTERM)
 	<-q
 
-	//后续操作处理，比如主动从服务中心中移除当前节点
+	// 后续操作处理，比如主动从服务中心中移除当前节点
 	zap.L().Error("项目停止运行了......")
 
 }

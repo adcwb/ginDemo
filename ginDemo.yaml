@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gindemo-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gindemo
+  template:
+    metadata:
+      labels:
+        app: gindemo
+    spec:
+      containers:
+      - name: gindemo
+        image: adcwb/images:gindemo
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: SW_AGENT_NAME
+          value: "gindemo"
+        - name: SW_AGENT_NAMESPACE
+          value: "Golang"
+        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES
+          value: "skywalking-oap.default.svc.cluster.local:11800"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gindemo-service
+spec:
+  selector:
+    app: gindemo
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+      nodePort: 31000
+  type: NodePort
+
