@@ -21,9 +21,9 @@ func Include(opts ...Option) {
 }
 
 // Init 初始化
-func Init(ENV string) *gin.Engine {
+func Init() *gin.Engine {
 	// 生产中启动，关闭DeBug模式, 关闭接口文档展示
-	if global.CONFIG.GetBool(ENV + ".DeBug") {
+	if global.CONFIG.GetBool("DeBug") {
 		gin.SetMode(gin.ReleaseMode)
 		err := os.Setenv("NAME_OF_ENV_VARIABLE", "true")
 		if err != nil {

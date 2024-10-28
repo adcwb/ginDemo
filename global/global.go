@@ -3,6 +3,7 @@ package global
 import (
 	"context"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"github.com/go-co-op/gocron"
 	"github.com/go-redis/redis/v8" // 注意导入的是新版本
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -20,6 +21,7 @@ var (
 	REDIS           *redis.Client
 	REDISCTX        context.Context
 	CONFIG          *viper.Viper
+	ConfigMap       *Config
 	MONGO           *mongo.Client
 	RabbitMQConn    *amqp.Connection
 	RabbitMQChannel *amqp.Channel
@@ -28,4 +30,5 @@ var (
 	AliStorage      *oss.Client
 	lock            sync.RWMutex // 全局声明一把读写锁
 	ChanMap         sync.Map
+	CasDoorClient   *casdoorsdk.Client
 )

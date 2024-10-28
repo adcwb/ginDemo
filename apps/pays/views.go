@@ -134,7 +134,7 @@ func WechatPay(c *gin.Context) {
 
 	config := entity.PayConfig{
 		AppID:        "",
-		MchID:        "1610519787",
+		MchID:        "",
 		PayNotify:    "https://pays.example.com/pays/WechatPayCallback",
 		RefundNotify: "https://pays.example.com/pays/WechatPayCallback",
 		Secret:       "", // key

@@ -2,7 +2,7 @@ package utils
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 	"time"
 )
 
@@ -16,36 +16,46 @@ var Secret = []byte("W2JzDLCNpdO8Xq94ZlAc6Hge7fshbvtymkGKRn3YQruaM1BToIjVwU0SxEF
 // 如果想要保存更多信息，都可以添加到这个结构体中
 type MyClaims struct {
 	Username string `json:"username"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 // GenToken 生成JWT
 func GenToken(username string) (string, error) {
-	// 创建一个我们自己的声明
-	c := MyClaims{
-		username, // 自定义字段
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(TokenExpireDuration).Unix(), // 过期时间
-			Issuer:    "my-project",                               // 签发人
+	expirationTime := time.Now().Add(TokenExpireDuration)
+
+	claims := MyClaims{
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
-	// 使用指定的签名方法创建签名对象
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
-	// 使用指定的secret签名并获得完整的编码后的字符串token
-	return token.SignedString(Secret)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(Secret)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
 }
 
 // ParseToken 解析JWT
 func ParseToken(tokenString string) (*MyClaims, error) {
-	// 解析token
-	token, err := jwt.ParseWithClaims(tokenString, &MyClaims{}, func(token *jwt.Token) (i interface{}, err error) {
+	token, err := jwt.ParseWithClaims(tokenString, &MyClaims{}, func(token *jwt.Token) (any, error) {
+		// 确保签名方法是我们使用的签名方法
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
 		return Secret, nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
-	if claims, ok := token.Claims.(*MyClaims); ok && token.Valid { // 校验token
+
+	if claims, ok := token.Claims.(*MyClaims); ok && token.Valid {
 		return claims, nil
 	}
+
 	return nil, errors.New("invalid token")
 }

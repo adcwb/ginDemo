@@ -21,7 +21,7 @@ func InitLogger() (err error) {
 	writeSyncer := getLogWriter(
 		"./logs/gin.log",
 		100,
-		5,
+		7,
 		30,
 	)
 	encoder := getEncoder()

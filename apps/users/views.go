@@ -246,3 +246,49 @@ func SendSmsCode(c *gin.Context) {
 		c.JSON(http.StatusOK, ReturnData)
 	}
 }
+
+// CasdoorLogin 用户登录接口
+//
+//	@BasePath		/users/login
+//	@Summary		用户登录
+//	@Description	SSO统一登录认证平台
+//	@Tags			Users
+//	@Accept			application/json
+//	@Produce		application/json
+//	@Param			Authorization	header	string			false	"Bearer 用户令牌"
+//	@Param			object			body	SendDataStruct	true	"查询参数"
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	testStruct "{"code":200,"data":"ok","msg":"ok"}"
+//	@Router			/SendSmsCode [post]
+func CasdoorLogin(c *gin.Context) {
+	ssoConfig := global.CONFIG.GetStringMapString(global.CONFIG.GetString("RunConfig") + ".SSOAuthentication")
+
+	authURL := global.CasDoorClient.GetSigninUrl(ssoConfig["casdoorredirecturl"])
+	c.Redirect(http.StatusFound, authURL)
+}
+
+// CasdoorCallback 用户登录回调接口
+//
+//	@BasePath		/users/callback
+//	@Summary		用户登录回调接口
+//	@Description	SSO统一登录认证平台
+//	@Tags			Users
+//	@Accept			application/json
+//	@Produce		application/json
+//	@Param			Authorization	header	string			false	"Bearer 用户令牌"
+//	@Param			object			body	SendDataStruct	true	"查询参数"
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	testStruct "{"code":200,"data":"ok","msg":"ok"}"
+//	@Router			/SendSmsCode [post]
+func CasdoorCallback(c *gin.Context) {
+	code := c.Query("code")
+	state := c.Query("state")
+	authToken, err := global.CasDoorClient.GetOAuthToken(code, state)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": err})
+		return
+	}
+	global.CasDoorClient.ParseJwtToken(authToken.AccessToken)
+	fmt.Println()
+	c.JSON(http.StatusOK, gin.H{"token": authToken})
+}

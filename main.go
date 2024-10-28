@@ -51,16 +51,15 @@ func main() {
 	// 初始化配置文件
 	initialization.InitConfigFile()
 
-	// 获取配置文件中需要使用的环境
-	ENV := global.CONFIG.GetString("RunConfig")
+	initialization.InitCasDoorSDK()
 
-	// 初始化日志
+	// 初始化日志中间件
 	if err := middleware.InitLogger(); err != nil {
 		zap.L().Error("日志模块加载失败！")
 	}
 	var err error
 	// 初始化数据库
-	// global.DB, _ = initialization.InitMySqlClient(global.CONFIG.GetString("RunConfig"))
+	global.DB, _ = initialization.InitMySqlClient()
 
 	// 数据迁移
 	// err := global.DB.AutoMigrate(
@@ -71,23 +70,24 @@ func main() {
 	// if err != nil {
 	//	zap.L().Error("数据库自动迁移失败！", zap.Error(err))
 	// }
+
 	// 初始化MongoDB数据库
-	// initialization.InitMongoDBClient(ENV)
+	initialization.InitMongoDBClient()
 
 	// 初始化Redis数据库
-	// initialization.InitRedisClient(ENV)
+	initialization.InitRedisClient()
 
 	// 初始化InfluxDB数据库
-	// initialization.InitInfluxDB(global.CONFIG.GetString("RunConfig"))
+	initialization.InitInfluxDB()
 
 	// 初始化RabbitMQ消息队列
-	// initialization.InitRabbitMQ(ENV)
+	initialization.InitRabbitMQ()
 
 	// 初始化企业微信所需要的参数
-	// utils.InitWorkWechatData(global.CONFIG.GetString(ENV + ".WorkWechatOpenKfId"))
+	//utils.InitWorkWechatData(global.CONFIG.GetString("WorkWechatOpenKfId"))
 
 	// 初始化阿里云OSS存储
-	// initialization.InitAliYunOss(global.CONFIG.GetString("RunConfig"))
+	//initialization.InitAliYunOss()
 
 	// 初始化定时任务
 	// global.JobS = gocron.NewScheduler(time.UTC)
@@ -103,19 +103,21 @@ func main() {
 	// global.JobS.StartBlocking() // 启动调度器并阻塞当前执行路径
 
 	// 初始化路由
-	r := apps.Init(ENV)
+	r := apps.Init()
 	// initialization.InitSocketIO()
 
-	if global.CONFIG.GetBool(ENV + ".RunningTLS") {
+	if global.ConfigMap.RunningConfig.RunningTLS {
 		// 启用https
 		if err = r.RunTLS(
-			global.CONFIG.GetString(ENV+".host")+":"+strconv.Itoa(global.CONFIG.GetInt(ENV+".port")), global.CONFIG.GetString(ENV+".RunningCertFile"), global.CONFIG.GetString(ENV+".RunningKeyFile"),
+			global.ConfigMap.RunningConfig.Host+":"+strconv.Itoa(global.ConfigMap.RunningConfig.Port),
+			global.ConfigMap.RunningConfig.RunningCertFile,
+			global.ConfigMap.RunningConfig.RunningKeyFile,
 		); err != nil {
 			zap.L().Error("项目启动失败！", zap.Error(err))
 		}
 
 	} else {
-		if err = r.Run(global.CONFIG.GetString(ENV+".host") + ":" + strconv.Itoa(global.CONFIG.GetInt(ENV+".port"))); err != nil {
+		if err = r.Run(global.ConfigMap.RunningConfig.Host + ":" + strconv.Itoa(global.ConfigMap.RunningConfig.Port)); err != nil {
 			zap.L().Error("项目启动失败！", zap.Error(err))
 		}
 	}
